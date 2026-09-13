@@ -36,6 +36,8 @@ class CloudDataStore(private val context: Context) {
         }
     }
 
+    fun isCloudConfigured(): Boolean = isFirebaseConfigured()
+
     private fun sanitizeEmailForPath(email: String): String {
         return email.lowercase().trim()
             .replace("@", "_at_")
@@ -420,6 +422,181 @@ class CloudDataStore(private val context: Context) {
         } catch (e: Exception) {
             Log.e(tag, "Failed to read cloud sync snapshot", e)
             return@withContext null
+        }
+    }
+
+    fun serializePayloadToJson(
+        email: String,
+        products: List<ProductItem>,
+        customers: List<Customer>,
+        batches: List<DailyBatchEntry>,
+        sales: List<SaleTransaction>
+    ): String {
+        val root = JSONObject()
+        root.put("account_email", email)
+        root.put("app_name", "RAI FISH")
+        root.put("timestamp", System.currentTimeMillis())
+
+        val productsArray = JSONArray()
+        products.forEach { p ->
+            val obj = JSONObject()
+            obj.put("id", p.id)
+            obj.put("name", p.name)
+            obj.put("pricePerKg", p.pricePerKg)
+            obj.put("stockPieces", p.stockPieces)
+            obj.put("stockWeightKg", p.stockWeightKg)
+            obj.put("unit", p.unit)
+            obj.put("category", p.category)
+            obj.put("lastUpdated", p.lastUpdated)
+            productsArray.put(obj)
+        }
+        root.put("products", productsArray)
+
+        val customersArray = JSONArray()
+        customers.forEach { c ->
+            val obj = JSONObject()
+            obj.put("id", c.id)
+            obj.put("name", c.name)
+            obj.put("phoneNumber", c.phoneNumber)
+            obj.put("address", c.address)
+            obj.put("notes", c.notes)
+            obj.put("createdAt", c.createdAt)
+            customersArray.put(obj)
+        }
+        root.put("customers", customersArray)
+
+        val batchesArray = JSONArray()
+        batches.forEach { b ->
+            val obj = JSONObject()
+            obj.put("id", b.id)
+            obj.put("dateString", b.dateString)
+            obj.put("timestamp", b.timestamp)
+            obj.put("name", b.name)
+            obj.put("pieces", b.pieces)
+            obj.put("weightKg", b.weightKg)
+            obj.put("notes", b.notes)
+            batchesArray.put(obj)
+        }
+        root.put("batches", batchesArray)
+
+        val salesArray = JSONArray()
+        sales.forEach { s ->
+            val obj = JSONObject()
+            obj.put("id", s.id)
+            obj.put("customerId", s.customerId ?: -1L)
+            obj.put("customerName", s.customerName)
+            obj.put("productId", s.productId ?: -1L)
+            obj.put("itemName", s.itemName)
+            obj.put("pieces", s.pieces)
+            obj.put("weightKg", s.weightKg)
+            obj.put("pricePerKg", s.pricePerKg)
+            obj.put("totalPrice", s.totalPrice)
+            obj.put("dateString", s.dateString)
+            obj.put("timestamp", s.timestamp)
+            salesArray.put(obj)
+        }
+        root.put("sales", salesArray)
+
+        return root.toString(2)
+    }
+
+    fun parsePayloadFromJson(jsonString: String): CloudSyncPayload? {
+        return try {
+            val root = JSONObject(jsonString)
+            val timestamp = root.optLong("timestamp", System.currentTimeMillis())
+
+            val productsList = mutableListOf<ProductItem>()
+            val prodArray = root.optJSONArray("products")
+            if (prodArray != null) {
+                for (i in 0 until prodArray.length()) {
+                    val obj = prodArray.getJSONObject(i)
+                    productsList.add(
+                        ProductItem(
+                            id = obj.optLong("id", 0L),
+                            name = obj.optString("name", ""),
+                            pricePerKg = obj.optDouble("pricePerKg", 0.0),
+                            stockPieces = obj.optInt("stockPieces", 0),
+                            stockWeightKg = obj.optDouble("stockWeightKg", 0.0),
+                            unit = obj.optString("unit", "kg"),
+                            category = obj.optString("category", "General"),
+                            lastUpdated = obj.optLong("lastUpdated", System.currentTimeMillis())
+                        )
+                    )
+                }
+            }
+
+            val customersList = mutableListOf<Customer>()
+            val custArray = root.optJSONArray("customers")
+            if (custArray != null) {
+                for (i in 0 until custArray.length()) {
+                    val obj = custArray.getJSONObject(i)
+                    customersList.add(
+                        Customer(
+                            id = obj.optLong("id", 0L),
+                            name = obj.optString("name", ""),
+                            phoneNumber = obj.optString("phoneNumber", ""),
+                            address = obj.optString("address", ""),
+                            notes = obj.optString("notes", ""),
+                            createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+                        )
+                    )
+                }
+            }
+
+            val batchesList = mutableListOf<DailyBatchEntry>()
+            val batchArray = root.optJSONArray("batches")
+            if (batchArray != null) {
+                for (i in 0 until batchArray.length()) {
+                    val obj = batchArray.getJSONObject(i)
+                    batchesList.add(
+                        DailyBatchEntry(
+                            id = obj.optLong("id", 0L),
+                            dateString = obj.optString("dateString", ""),
+                            timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
+                            name = obj.optString("name", ""),
+                            pieces = obj.optInt("pieces", 0),
+                            weightKg = obj.optDouble("weightKg", 0.0),
+                            notes = obj.optString("notes", ""),
+                            isSynced = true
+                        )
+                    )
+                }
+            }
+
+            val salesList = mutableListOf<SaleTransaction>()
+            val salesArray = root.optJSONArray("sales")
+            if (salesArray != null) {
+                for (i in 0 until salesArray.length()) {
+                    val obj = salesArray.getJSONObject(i)
+                    salesList.add(
+                        SaleTransaction(
+                            id = obj.optLong("id", 0L),
+                            customerId = if (obj.has("customerId") && obj.getLong("customerId") > 0) obj.getLong("customerId") else null,
+                            customerName = obj.optString("customerName", ""),
+                            productId = if (obj.has("productId") && obj.getLong("productId") > 0) obj.getLong("productId") else null,
+                            itemName = obj.optString("itemName", ""),
+                            pieces = obj.optInt("pieces", 0),
+                            weightKg = obj.optDouble("weightKg", 0.0),
+                            pricePerKg = obj.optDouble("pricePerKg", 0.0),
+                            totalPrice = obj.optDouble("totalPrice", 0.0),
+                            dateString = obj.optString("dateString", ""),
+                            timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
+                            isSynced = true
+                        )
+                    )
+                }
+            }
+
+            CloudSyncPayload(
+                products = productsList,
+                customers = customersList,
+                batches = batchesList,
+                sales = salesList,
+                timestamp = timestamp
+            )
+        } catch (e: Exception) {
+            Log.e(tag, "Failed to parse payload from json", e)
+            null
         }
     }
 }

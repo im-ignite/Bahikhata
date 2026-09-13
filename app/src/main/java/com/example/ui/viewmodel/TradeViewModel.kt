@@ -276,6 +276,67 @@ class TradeViewModel(
         }
     }
 
+    fun isCloudConfigured(): Boolean = repository.isCloudConfigured()
+
+    fun exportBackupFile(context: Context): Boolean {
+        return try {
+            viewModelScope.launch {
+                val json = repository.exportBackupJson()
+                val fileName = "RAI_FISH_Backup_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.json"
+                val exportDir = File(context.cacheDir, "backups").apply { mkdirs() }
+                val file = File(exportDir, fileName)
+                FileOutputStream(file).use { out ->
+                    out.write(json.toByteArray(Charsets.UTF_8))
+                }
+
+                val uri: Uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/json"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "RAI FISH Backup - $fileName")
+                    putExtra(Intent.EXTRA_TEXT, "Complete data backup for RAI FISH App. Save to Google Drive to keep your data safe across installs.")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+
+                val chooser = Intent.createChooser(intent, "Save Backup to Google Drive / Files")
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooser)
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun restoreBackupFromUri(context: Context, uri: Uri, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val jsonString = context.contentResolver.openInputStream(uri)?.use { stream ->
+                    stream.bufferedReader().use { it.readText() }
+                } ?: ""
+
+                if (jsonString.isBlank()) {
+                    onResult(false, "Backup file is empty")
+                    return@launch
+                }
+
+                val success = repository.importBackupJson(jsonString)
+                if (success) {
+                    onResult(true, "Data successfully restored from backup!")
+                } else {
+                    onResult(false, "Could not parse backup file")
+                }
+            } catch (e: Exception) {
+                onResult(false, e.message ?: "Failed to restore backup")
+            }
+        }
+    }
+
     // Google Drive CSV Export & Share
     fun exportCsvForGoogleDrive(context: Context): Boolean {
         return try {

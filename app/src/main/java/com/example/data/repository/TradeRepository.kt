@@ -405,4 +405,37 @@ class TradeRepository(
 
         return sb.toString()
     }
+
+    fun isCloudConfigured(): Boolean = cloudDataStore.isCloudConfigured()
+
+    suspend fun exportBackupJson(): String = withContext(Dispatchers.IO) {
+        val products = productDao.getAllProductsList()
+        val customers = customerDao.getAllCustomersList()
+        val batches = batchDao.getAllBatchesList()
+        val sales = saleDao.getAllSalesList()
+        val email = googleAccount.value.email.ifBlank { "offline_user@raifish.local" }
+        cloudDataStore.serializePayloadToJson(email, products, customers, batches, sales)
+    }
+
+    suspend fun importBackupJson(jsonString: String): Boolean = withContext(Dispatchers.IO) {
+        val payload = cloudDataStore.parsePayloadFromJson(jsonString) ?: return@withContext false
+        try {
+            if (payload.products.isNotEmpty()) {
+                productDao.insertAll(payload.products)
+            }
+            if (payload.customers.isNotEmpty()) {
+                customerDao.insertAll(payload.customers)
+            }
+            if (payload.batches.isNotEmpty()) {
+                batchDao.insertAll(payload.batches)
+            }
+            if (payload.sales.isNotEmpty()) {
+                saleDao.insertAll(payload.sales)
+            }
+            _lastSyncLog.value = "Restored ${payload.sales.size} sales, ${payload.products.size} products from file"
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 }

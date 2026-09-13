@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.GoogleAccountInfo
 import com.example.data.model.SyncStatus
+import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.DangerRed
 import com.example.ui.theme.SuccessGreen
@@ -362,8 +363,11 @@ fun GoogleAccountProfileDialog(
     syncStatus: SyncStatus,
     lastSyncLog: String,
     strings: AppStrings,
+    isCloudConfigured: Boolean = false,
     onSyncNow: () -> Unit,
     onToggleAutoSync: (Boolean) -> Unit,
+    onExportBackup: () -> Unit = {},
+    onRestoreBackup: () -> Unit = {},
     onSwitchAccount: () -> Unit,
     onSignOut: () -> Unit,
     onDismiss: () -> Unit
@@ -413,30 +417,34 @@ fun GoogleAccountProfileDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = SuccessGreen.copy(alpha = 0.1f)
+                        containerColor = if (isCloudConfigured) SuccessGreen.copy(alpha = 0.1f) else AmberAccent.copy(alpha = 0.12f)
                     )
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Default.CloudDone,
+                                imageVector = if (isCloudConfigured) Icons.Default.CloudDone else Icons.Default.Cloud,
                                 contentDescription = null,
-                                tint = SuccessGreen,
+                                tint = if (isCloudConfigured) SuccessGreen else AmberAccent,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = strings.cloudSyncOnlineStatus,
+                                text = if (isCloudConfigured) "Google Firestore Cloud Active" else "Local Storage (Cloud Setup Required)",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = SuccessGreen
+                                color = if (isCloudConfigured) SuccessGreen else AmberAccent
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = lastSyncLog,
+                            text = if (isCloudConfigured) {
+                                lastSyncLog.ifBlank { "Real-time dual sync active across devices" }
+                            } else {
+                                "Data is stored on this phone. To sync online across devices & app reinstalls, add 'google-services.json' to app/. You can also save a full backup to Google Drive below."
+                            },
                             style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -500,7 +508,37 @@ fun GoogleAccountProfileDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Export Backup to Drive / Files
+                OutlinedButton(
+                    onClick = onExportBackup,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("export_backup_file_btn"),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp), tint = TealPrimary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Save Backup to Google Drive / Phone", color = TealPrimary, fontSize = 12.sp)
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Restore Backup from File
+                OutlinedButton(
+                    onClick = onRestoreBackup,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("restore_backup_file_btn"),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp), tint = SuccessGreen)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Restore from Backup File", color = SuccessGreen, fontSize = 12.sp)
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
 
                 // Switch Account Button
                 OutlinedButton(

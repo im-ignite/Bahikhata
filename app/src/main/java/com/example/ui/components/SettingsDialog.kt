@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
@@ -61,8 +63,11 @@ fun SettingsDialog(
     currentLanguage: AppLanguage,
     strings: AppStrings,
     googleAccount: GoogleAccountInfo = GoogleAccountInfo(),
+    isCloudConfigured: Boolean = false,
     onOpenGoogleSignIn: () -> Unit = {},
     onOpenGoogleProfile: () -> Unit = {},
+    onExportBackup: () -> Unit = {},
+    onRestoreBackup: () -> Unit = {},
     onLanguageSelected: (AppLanguage) -> Unit,
     onClearAllData: () -> Unit = {},
     onDismiss: () -> Unit
@@ -224,7 +229,9 @@ fun SettingsDialog(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (googleAccount.isLinked) "${googleAccount.email} • ${strings.cloudSyncOnlineStatus}" else strings.googleSignInExplanation,
+                                text = if (googleAccount.isLinked) {
+                                    if (isCloudConfigured) "${googleAccount.email} • Cloud Active" else "${googleAccount.email} • Local (Cloud setup needed)"
+                                } else strings.googleSignInExplanation,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -234,8 +241,77 @@ fun SettingsDialog(
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
-                                .background(if (googleAccount.isLinked) SuccessGreen else Color.Gray, CircleShape)
+                                .background(
+                                    if (googleAccount.isLinked) {
+                                        if (isCloudConfigured) SuccessGreen else AmberAccent
+                                    } else Color.Gray,
+                                    CircleShape
+                                )
                         )
+                    }
+                }
+
+                // Backup & Restore Card (Works offline & with Google Drive)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CloudSync,
+                                contentDescription = null,
+                                tint = TealPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Backup & Data Restore",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Save full backup to Google Drive / phone storage to restore your data anytime, even after reinstalling the app.",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = onExportBackup,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("settings_export_backup_btn"),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Export Backup", fontSize = 11.sp)
+                            }
+                            OutlinedButton(
+                                onClick = onRestoreBackup,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("settings_restore_backup_btn"),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Restore Backup", fontSize = 11.sp)
+                            }
+                        }
                     }
                 }
 

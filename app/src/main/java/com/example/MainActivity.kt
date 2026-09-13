@@ -196,6 +196,16 @@ fun MainAppScreen(
         }
     }
 
+    val restoreBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.restoreBackupFromUri(context, uri) { success, message ->
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotifPermission) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -574,6 +584,7 @@ fun MainAppScreen(
             syncStatus = syncStatus,
             lastSyncLog = lastSyncLog,
             strings = strings,
+            isCloudConfigured = viewModel.isCloudConfigured(),
             onSyncNow = {
                 viewModel.triggerCloudSync()
                 Toast.makeText(
@@ -584,6 +595,19 @@ fun MainAppScreen(
             },
             onToggleAutoSync = { enabled ->
                 viewModel.toggleAutoSync(enabled)
+            },
+            onExportBackup = {
+                val success = viewModel.exportBackupFile(context)
+                if (!success) {
+                    Toast.makeText(context, "Failed to export backup", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onRestoreBackup = {
+                try {
+                    restoreBackupLauncher.launch(arrayOf("application/json", "*/*"))
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Could not launch file picker", Toast.LENGTH_SHORT).show()
+                }
             },
             onSwitchAccount = {
                 showGoogleSignInPrompt = true
@@ -601,6 +625,7 @@ fun MainAppScreen(
             currentLanguage = uiState.language,
             strings = strings,
             googleAccount = googleAccount,
+            isCloudConfigured = viewModel.isCloudConfigured(),
             onOpenGoogleSignIn = {
                 showSettingsDialog = false
                 showGoogleSignInPrompt = true
@@ -608,6 +633,19 @@ fun MainAppScreen(
             onOpenGoogleProfile = {
                 showSettingsDialog = false
                 showGoogleProfileDialog = true
+            },
+            onExportBackup = {
+                val success = viewModel.exportBackupFile(context)
+                if (!success) {
+                    Toast.makeText(context, "Failed to export backup", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onRestoreBackup = {
+                try {
+                    restoreBackupLauncher.launch(arrayOf("application/json", "*/*"))
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Could not launch file picker", Toast.LENGTH_SHORT).show()
+                }
             },
             onLanguageSelected = { newLang ->
                 viewModel.setLanguage(newLang)
