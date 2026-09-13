@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Center Balance Pillar -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M52,38 L56,38 L56,70 L52,70 Z" />
+
+    <!-- Top Pivot Sphere -->
+    <path
+        android:fillColor="#14B8A6"
+        android:pathData="M54,36m-4.5,0a4.5,4.5 0 1,0 9,0a4.5,4.5 0 1,0 -9,0" />
+
+    <!-- Balance Crossbar -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M28,42 L80,42 L80,45 L28,45 Z" />
+
+    <!-- Left Hanging Pan Cables & Pan -->
+    <path
+        android:strokeColor="#94A3B8"
+        android:strokeWidth="1.8"
+        android:pathData="M32,45 L27,58 M36,45 L41,58" />
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M24,58 C24,66 44,66 44,58 Z" />
+
+    <!-- Right Hanging Pan Cables & Pan -->
+    <path
+        android:strokeColor="#94A3B8"
+        android:strokeWidth="1.8"
+        android:pathData="M72,45 L67,58 M76,45 L81,58" />
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M64,58 C64,66 84,66 84,58 Z" />
+
+    <!-- Base Platform -->
+    <path
+        android:fillColor="#0D9488"
+        android:pathData="M42,70 L66,70 L70,75 L38,75 Z" />
+
+    <!-- Circular Sync Arrow Accent (Top right) -->
+    <path
+        android:strokeColor="#2DD4BF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M68,26 C77,29 83,37 83,46" />
+    <path
+        android:fillColor="#2DD4BF"
+        android:pathData="M83,44 L87,38 L79,39 Z" />
+
+    <!-- Circular Sync Arrow Accent (Bottom left) -->
+    <path
+        android:strokeColor="#2DD4BF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M40,78 C31,75 25,67 25,58" />
+    <path
+        android:fillColor="#2DD4BF"
+        android:pathData="M25,60 L21,66 L29,65 Z" />
+</vector>

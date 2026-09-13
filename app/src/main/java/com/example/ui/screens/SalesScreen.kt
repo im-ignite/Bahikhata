@@ -1,0 +1,774 @@
+package com.example.ui.screens
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.data.model.Customer
+import com.example.data.model.ProductItem
+import com.example.data.model.SaleTransaction
+import com.example.ui.theme.AmberAccent
+import com.example.ui.theme.CyanSecondary
+import com.example.ui.theme.DangerRed
+import com.example.ui.theme.SuccessGreen
+import com.example.ui.theme.TealPrimary
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+@Composable
+fun SalesScreen(
+    sales: List<SaleTransaction>,
+    products: List<ProductItem>,
+    customers: List<Customer>,
+    onRecordSale: (
+        customerId: Long?,
+        customerName: String,
+        productId: Long?,
+        itemName: String,
+        pieces: Int,
+        weightKg: Double,
+        pricePerKg: Double,
+        dateString: String
+    ) -> Unit,
+    onAddCustomer: (name: String, phone: String, address: String, notes: String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var showRecordSaleDialog by remember { mutableStateOf(false) }
+
+    val totalSalesRevenue = sales.sumOf { it.totalPrice }
+    val totalWeightSold = sales.sumOf { it.weightKg }
+    val totalPiecesSold = sales.sumOf { it.pieces }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(top = 12.dp, bottom = 88.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header Sales KPI Banner
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Sales & Customer Orders",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Automatic weight-based pricing & inventory deduction",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(AmberAccent.copy(alpha = 0.15f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AttachMoney,
+                                    contentDescription = null,
+                                    tint = AmberAccent,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1.2f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(AmberAccent.copy(alpha = 0.1f))
+                                    .padding(12.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Total Revenue",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "$${String.format("%.2f", totalSalesRevenue)}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = AmberAccent
+                                    )
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(TealPrimary.copy(alpha = 0.1f))
+                                    .padding(12.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Weight Sold",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "${String.format("%.1f", totalWeightSold)} kg",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = TealPrimary
+                                    )
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(0.9f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(CyanSecondary.copy(alpha = 0.1f))
+                                    .padding(12.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Pieces Sold",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "$totalPiecesSold pcs",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = CyanSecondary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Sales History Section Header
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Sales History (${sales.size})",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Text(
+                        text = "Weight × $/kg calculation",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            // Sales List
+            if (sales.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ReceiptLong,
+                                contentDescription = null,
+                                tint = TealPrimary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No sales recorded yet",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Tap + to add customer, enter weight & pieces for auto-pricing",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            } else {
+                items(sales, key = { it.id }) { sale ->
+                    SaleTransactionCard(sale = sale)
+                }
+            }
+        }
+
+        // Floating Action Button to record new sale
+        FloatingActionButton(
+            onClick = { showRecordSaleDialog = true },
+            containerColor = AmberAccent,
+            contentColor = Color.White,
+            shape = CircleShape,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp)
+                .testTag("record_sale_fab")
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = "Record Sale")
+        }
+    }
+
+    if (showRecordSaleDialog) {
+        RecordSaleDialog(
+            products = products,
+            customers = customers,
+            onDismiss = { showRecordSaleDialog = false },
+            onConfirm = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, date ->
+                onRecordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, date)
+                showRecordSaleDialog = false
+            },
+            onAddCustomer = onAddCustomer
+        )
+    }
+}
+
+@Composable
+fun SaleTransactionCard(
+    sale: SaleTransaction,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("sale_item_${sale.id}"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(TealPrimary.copy(alpha = 0.12f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = TealPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = sale.customerName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = sale.dateString,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Calculated total price highlight
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "$${String.format("%.2f", sale.totalPrice)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AmberAccent
+                    )
+                    Text(
+                        text = "@ $${String.format("%.2f", sale.pricePerKg)}/kg",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Item and weight metrics
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = sale.itemName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(TealPrimary.copy(alpha = 0.12f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "${String.format("%.2f", sale.weightKg)} kg",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TealPrimary
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(CyanSecondary.copy(alpha = 0.12f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "${sale.pieces} pcs",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = CyanSecondary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RecordSaleDialog(
+    products: List<ProductItem>,
+    customers: List<Customer>,
+    onDismiss: () -> Unit,
+    onConfirm: (
+        customerId: Long?,
+        customerName: String,
+        productId: Long?,
+        itemName: String,
+        pieces: Int,
+        weight: Double,
+        pricePerKg: Double,
+        date: String
+    ) -> Unit,
+    onAddCustomer: (name: String, phone: String, address: String, notes: String) -> Unit
+) {
+    val today = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
+
+    var selectedCustomer by remember { mutableStateOf<Customer?>(customers.firstOrNull()) }
+    var manualCustomerName by remember { mutableStateOf("") }
+    var isNewCustomerMode by remember { mutableStateOf(false) }
+    var newCustomerPhone by remember { mutableStateOf("") }
+    var newCustomerAddress by remember { mutableStateOf("") }
+
+    var selectedProduct by remember { mutableStateOf<ProductItem?>(products.firstOrNull()) }
+    var manualItemName by remember { mutableStateOf("") }
+    var manualPricePerKgText by remember { mutableStateOf("") }
+
+    var piecesText by remember { mutableStateOf("") }
+    var weightText by remember { mutableStateOf("") }
+    var dateString by remember { mutableStateOf(today) }
+
+    var customerDropdownExpanded by remember { mutableStateOf(false) }
+    var productDropdownExpanded by remember { mutableStateOf(false) }
+
+    // Live Automatic Price Calculation on the basis of weight
+    val inputWeight = weightText.toDoubleOrNull() ?: 0.0
+    val inputPieces = piecesText.toIntOrNull() ?: 0
+    val activePricePerKg = selectedProduct?.pricePerKg ?: manualPricePerKgText.toDoubleOrNull() ?: 0.0
+    val calculatedTotalPrice = inputWeight * activePricePerKg
+
+    // Inventory Deduction Preview
+    val availablePieces = selectedProduct?.stockPieces ?: 0
+    val availableWeight = selectedProduct?.stockWeightKg ?: 0.0
+    val remainingPieces = availablePieces - inputPieces
+    val remainingWeight = availableWeight - inputWeight
+    val isWeightExceeded = selectedProduct != null && remainingWeight < 0
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Calculate,
+                    contentDescription = null,
+                    tint = AmberAccent
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Record Customer Sale", fontWeight = FontWeight.Bold)
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Customer Selector or Creator
+                if (!isNewCustomerMode) {
+                    ExposedDropdownMenuBox(
+                        expanded = customerDropdownExpanded,
+                        onExpandedChange = { customerDropdownExpanded = !customerDropdownExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCustomer?.name ?: "Select or add customer",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Customer *") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = customerDropdownExpanded) },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                                .testTag("sale_customer_dropdown")
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = customerDropdownExpanded,
+                            onDismissRequest = { customerDropdownExpanded = false }
+                        ) {
+                            customers.forEach { customer ->
+                                DropdownMenuItem(
+                                    text = { Text("${customer.name} (${customer.phoneNumber})") },
+                                    onClick = {
+                                        selectedCustomer = customer
+                                        customerDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = { isNewCustomerMode = true },
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("+ Add New Customer", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                } else {
+                    // Inline New Customer Fields
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("New Customer Details", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                                TextButton(onClick = { isNewCustomerMode = false }) {
+                                    Text("Pick Existing", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = manualCustomerName,
+                                onValueChange = { manualCustomerName = it },
+                                label = { Text("Customer Name *") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth().testTag("new_customer_name_input")
+                            )
+
+                            OutlinedTextField(
+                                value = newCustomerPhone,
+                                onValueChange = { newCustomerPhone = it },
+                                label = { Text("Phone Number *") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                                singleLine = true,
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth().testTag("new_customer_phone_input")
+                            )
+
+                            OutlinedTextField(
+                                value = newCustomerAddress,
+                                onValueChange = { newCustomerAddress = it },
+                                label = { Text("Delivery Address") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth().testTag("new_customer_address_input")
+                            )
+                        }
+                    }
+                }
+
+                // Product Selector from Main Profile
+                ExposedDropdownMenuBox(
+                    expanded = productDropdownExpanded,
+                    onExpandedChange = { productDropdownExpanded = !productDropdownExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = selectedProduct?.let { "${it.name} ($${it.pricePerKg}/kg)" } ?: "Select product from profile",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Product / Commodity *") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productDropdownExpanded) },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                            .testTag("sale_product_dropdown")
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = productDropdownExpanded,
+                        onDismissRequest = { productDropdownExpanded = false }
+                    ) {
+                        products.forEach { prod ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text("${prod.name} • $${prod.pricePerKg}/kg", fontWeight = FontWeight.SemiBold)
+                                        Text("Stock: ${prod.stockPieces} pcs, ${String.format("%.1f", prod.stockWeightKg)} kg", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                },
+                                onClick = {
+                                    selectedProduct = prod
+                                    productDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Pieces and Weight Input
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = piecesText,
+                        onValueChange = { piecesText = it },
+                        label = { Text("Pieces *") },
+                        placeholder = { Text("e.g. 10") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("sale_pieces_input")
+                    )
+
+                    OutlinedTextField(
+                        value = weightText,
+                        onValueChange = { weightText = it },
+                        label = { Text("Weight (kg) *") },
+                        placeholder = { Text("e.g. 25.5") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("sale_weight_input")
+                    )
+                }
+
+                // Live Price Calculation & Inventory Deduction Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(AmberAccent.copy(alpha = 0.12f))
+                        .padding(12.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Auto Price (${String.format("%.2f", inputWeight)} kg × $${String.format("%.2f", activePricePerKg)}):",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Text(
+                                text = "$${String.format("%.2f", calculatedTotalPrice)}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = AmberAccent
+                            )
+                        }
+
+                        if (selectedProduct != null) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isWeightExceeded) {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = null,
+                                        tint = DangerRed,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Exceeds stock: ${String.format("%.1f", availableWeight)} kg available",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = DangerRed
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Inventory Deduction: ${availablePieces} → ${remainingPieces.coerceAtLeast(0)} pcs, ${String.format("%.1f", availableWeight)} → ${String.format("%.1f", remainingWeight.coerceAtLeast(0.0))} kg",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val custName = if (isNewCustomerMode) manualCustomerName.trim() else selectedCustomer?.name ?: "Walk-in Buyer"
+                    val custId = if (isNewCustomerMode) {
+                        onAddCustomer(manualCustomerName.trim(), newCustomerPhone.trim(), newCustomerAddress.trim(), "")
+                        null
+                    } else selectedCustomer?.id
+
+                    val prodName = selectedProduct?.name ?: manualItemName.ifEmpty { "General Commodity" }
+                    val prodId = selectedProduct?.id
+
+                    onConfirm(
+                        custId,
+                        custName,
+                        prodId,
+                        prodName,
+                        inputPieces,
+                        inputWeight,
+                        activePricePerKg,
+                        dateString
+                    )
+                },
+                enabled = inputWeight > 0 && activePricePerKg > 0 &&
+                        (if (isNewCustomerMode) manualCustomerName.isNotBlank() else selectedCustomer != null),
+                colors = ButtonDefaults.buttonColors(containerColor = AmberAccent),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.testTag("confirm_record_sale_btn")
+            ) {
+                Text("Confirm Sale & Deduct Stock")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}

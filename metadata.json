@@ -1,0 +1,6 @@
+{
+  "name": "TradeSync",
+  "description": "Daily inventory and weight-based sales management with real-time cloud sync, Google Drive CSV export, customer CRM, visual reports, and smart notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
