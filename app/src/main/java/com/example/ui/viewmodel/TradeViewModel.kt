@@ -258,6 +258,17 @@ class TradeViewModel(
         }
     }
 
+    fun signInWithCredentialManager(webClientId: String? = null, onResult: ((Boolean, String?) -> Unit)? = null) {
+        viewModelScope.launch {
+            val res = repository.signInWithCredentialManager(webClientId)
+            res.onSuccess {
+                onResult?.invoke(true, null)
+            }.onFailure { err ->
+                onResult?.invoke(false, err.message)
+            }
+        }
+    }
+
     fun linkGoogleAccount(email: String, customName: String? = null) {
         signInWithGoogleAccount(email, customName)
     }

@@ -84,7 +84,7 @@ class TradeRepository(
         productDao.deleteAllProducts()
         val account = authManager.accountInfo.value
         if (account.isLinked) {
-            cloudDataStore.uploadToCloud(account.email, emptyList(), emptyList(), emptyList(), emptyList())
+            cloudDataStore.clearUserCloudData(account.email)
         }
     }
 
@@ -102,14 +102,22 @@ class TradeRepository(
             pieces = pieces,
             weightKg = weightKg,
             notes = notes,
-            isSynced = false
+            isSynced = true
         )
-        batchDao.insertBatch(entry)
+        val id = batchDao.insertBatch(entry)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveBatchToCloud(account.email, entry.copy(id = id))
+        }
         autoSyncIfEnabled()
     }
 
     suspend fun deleteBatch(entry: DailyBatchEntry) = withContext(Dispatchers.IO) {
         batchDao.deleteBatch(entry)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.deleteBatchFromCloud(account.email, entry.id)
+        }
         autoSyncIfEnabled()
     }
 
@@ -128,17 +136,29 @@ class TradeRepository(
             stockWeightKg = stockWeightKg,
             category = category
         )
-        productDao.insertProduct(product)
+        val id = productDao.insertProduct(product)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveProductToCloud(account.email, product.copy(id = id))
+        }
         autoSyncIfEnabled()
     }
 
     suspend fun updateProduct(product: ProductItem) = withContext(Dispatchers.IO) {
         productDao.updateProduct(product)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveProductToCloud(account.email, product)
+        }
         autoSyncIfEnabled()
     }
 
     suspend fun deleteProduct(product: ProductItem) = withContext(Dispatchers.IO) {
         productDao.deleteProduct(product)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.deleteProductFromCloud(account.email, product.id)
+        }
         autoSyncIfEnabled()
     }
 
@@ -156,17 +176,29 @@ class TradeRepository(
             notes = notes
         )
         val id = customerDao.insertCustomer(customer)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveCustomerToCloud(account.email, customer.copy(id = id))
+        }
         autoSyncIfEnabled()
         id
     }
 
     suspend fun updateCustomer(customer: Customer) = withContext(Dispatchers.IO) {
         customerDao.updateCustomer(customer)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveCustomerToCloud(account.email, customer)
+        }
         autoSyncIfEnabled()
     }
 
     suspend fun deleteCustomer(customer: Customer) = withContext(Dispatchers.IO) {
         customerDao.deleteCustomer(customer)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.deleteCustomerFromCloud(account.email, customer.id)
+        }
         autoSyncIfEnabled()
     }
 
@@ -192,13 +224,23 @@ class TradeRepository(
             pricePerKg = pricePerKg,
             totalPrice = totalPrice,
             dateString = dateString,
-            isSynced = false
+            isSynced = true
         )
-        saleDao.insertSale(sale)
+        val id = saleDao.insertSale(sale)
+        val createdSale = sale.copy(id = id)
 
         // Automatic Inventory Deduction
         if (productId != null && productId > 0) {
             productDao.deductInventory(productId, pieces, weightKg)
+            val updatedProd = productDao.getProductByIdDirect(productId)
+            if (updatedProd != null && authManager.accountInfo.value.isLinked) {
+                cloudDataStore.saveProductToCloud(authManager.accountInfo.value.email, updatedProd)
+            }
+        }
+
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveSaleToCloud(account.email, createdSale)
         }
 
         notificationHelper.sendSaleRecordedNotification(customerName, totalPrice, weightKg)
@@ -209,14 +251,22 @@ class TradeRepository(
         val calculatedTotal = sale.weightKg * sale.pricePerKg
         val updatedSale = sale.copy(
             totalPrice = calculatedTotal,
-            isSynced = false
+            isSynced = true
         )
         saleDao.updateSale(updatedSale)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveSaleToCloud(account.email, updatedSale)
+        }
         autoSyncIfEnabled()
     }
 
     suspend fun deleteSale(sale: SaleTransaction) = withContext(Dispatchers.IO) {
         saleDao.deleteSale(sale)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.deleteSaleFromCloud(account.email, sale.id)
+        }
         autoSyncIfEnabled()
     }
 
@@ -239,14 +289,24 @@ class TradeRepository(
 
     suspend fun signInWithGoogleAccount(email: String, customName: String? = null) = withContext(Dispatchers.IO) {
         val info = authManager.completeSignInWithEmail(email, customName)
-        // Immediately restore any cloud data stored under this Google account
+        // Clear local cache before loading account data so only this account's cloud data is loaded
+        saleDao.deleteAllSales()
+        batchDao.deleteAllBatches()
+        customerDao.deleteAllCustomers()
+        productDao.deleteAllProducts()
+
         pullDataFromCloud(info.email)
         triggerCloudSync(notifyUser = false)
     }
 
-    suspend fun signInWithCredentialManager(webClientId: String?): Result<GoogleAccountInfo> = withContext(Dispatchers.IO) {
+    suspend fun signInWithCredentialManager(webClientId: String? = null): Result<GoogleAccountInfo> = withContext(Dispatchers.IO) {
         val res = authManager.signInWithCredentialManager(webClientId)
         res.onSuccess { info ->
+            saleDao.deleteAllSales()
+            batchDao.deleteAllBatches()
+            customerDao.deleteAllCustomers()
+            productDao.deleteAllProducts()
+
             pullDataFromCloud(info.email)
             triggerCloudSync(notifyUser = false)
         }
@@ -254,8 +314,14 @@ class TradeRepository(
     }
 
     fun signOutGoogleAccount() {
+        repoScope.launch {
+            saleDao.deleteAllSales()
+            batchDao.deleteAllBatches()
+            customerDao.deleteAllCustomers()
+            productDao.deleteAllProducts()
+        }
         authManager.signOut()
-        _lastSyncLog.value = "Signed out. Data remains stored locally."
+        _lastSyncLog.value = "Signed out. Cloud data safely saved in Google account."
     }
 
     fun toggleAutoSync(enabled: Boolean) {
@@ -270,18 +336,22 @@ class TradeRepository(
             var restoredCount = 0
 
             if (payload.products.isNotEmpty()) {
+                productDao.deleteAllProducts()
                 productDao.insertAll(payload.products)
                 restoredCount += payload.products.size
             }
             if (payload.customers.isNotEmpty()) {
+                customerDao.deleteAllCustomers()
                 customerDao.insertAll(payload.customers)
                 restoredCount += payload.customers.size
             }
             if (payload.batches.isNotEmpty()) {
+                batchDao.deleteAllBatches()
                 batchDao.insertAll(payload.batches)
                 restoredCount += payload.batches.size
             }
             if (payload.sales.isNotEmpty()) {
+                saleDao.deleteAllSales()
                 saleDao.insertAll(payload.sales)
                 restoredCount += payload.sales.size
             }

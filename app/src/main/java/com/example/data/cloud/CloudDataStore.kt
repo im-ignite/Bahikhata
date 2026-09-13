@@ -151,6 +151,36 @@ class CloudDataStore(private val context: Context) {
                         ).await()
                 }
 
+                // Delete remote docs that are no longer present
+                try {
+                    val remoteProds = userDoc.collection("products").get().await()
+                    remoteProds.documents.forEach { doc ->
+                        if (products.none { it.id.toString() == doc.id }) {
+                            doc.reference.delete().await()
+                        }
+                    }
+                    val remoteCusts = userDoc.collection("customers").get().await()
+                    remoteCusts.documents.forEach { doc ->
+                        if (customers.none { it.id.toString() == doc.id }) {
+                            doc.reference.delete().await()
+                        }
+                    }
+                    val remoteBatches = userDoc.collection("batches").get().await()
+                    remoteBatches.documents.forEach { doc ->
+                        if (batches.none { it.id.toString() == doc.id }) {
+                            doc.reference.delete().await()
+                        }
+                    }
+                    val remoteSales = userDoc.collection("sales").get().await()
+                    remoteSales.documents.forEach { doc ->
+                        if (sales.none { it.id.toString() == doc.id }) {
+                            doc.reference.delete().await()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(tag, "Remote cleanup warning: ${e.message}")
+                }
+
                 firestoreSuccess = true
             } catch (e: Exception) {
                 Log.w(tag, "Firestore push skipped or failed: ${e.message}")
@@ -601,6 +631,163 @@ class CloudDataStore(private val context: Context) {
         } catch (e: Exception) {
             Log.e(tag, "Failed to parse payload from json", e)
             null
+        }
+    }
+
+    suspend fun saveProductToCloud(email: String, product: ProductItem) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val userDoc = db.collection("users").document(sanitizeEmailForPath(email))
+            userDoc.collection("products").document(product.id.toString())
+                .set(
+                    mapOf(
+                        "id" to product.id,
+                        "name" to product.name,
+                        "pricePerKg" to product.pricePerKg,
+                        "stockPieces" to product.stockPieces,
+                        "stockWeightKg" to product.stockWeightKg,
+                        "unit" to product.unit,
+                        "category" to product.category,
+                        "lastUpdated" to product.lastUpdated
+                    ),
+                    SetOptions.merge()
+                ).await()
+        } catch (e: Exception) {
+            Log.w(tag, "saveProductToCloud error: ${e.message}")
+        }
+    }
+
+    suspend fun deleteProductFromCloud(email: String, productId: Long) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            db.collection("users").document(sanitizeEmailForPath(email))
+                .collection("products").document(productId.toString()).delete().await()
+        } catch (e: Exception) {
+            Log.w(tag, "deleteProductFromCloud error: ${e.message}")
+        }
+    }
+
+    suspend fun saveCustomerToCloud(email: String, customer: Customer) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val userDoc = db.collection("users").document(sanitizeEmailForPath(email))
+            userDoc.collection("customers").document(customer.id.toString())
+                .set(
+                    mapOf(
+                        "id" to customer.id,
+                        "name" to customer.name,
+                        "phoneNumber" to customer.phoneNumber,
+                        "address" to customer.address,
+                        "notes" to customer.notes,
+                        "createdAt" to customer.createdAt
+                    ),
+                    SetOptions.merge()
+                ).await()
+        } catch (e: Exception) {
+            Log.w(tag, "saveCustomerToCloud error: ${e.message}")
+        }
+    }
+
+    suspend fun deleteCustomerFromCloud(email: String, customerId: Long) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            db.collection("users").document(sanitizeEmailForPath(email))
+                .collection("customers").document(customerId.toString()).delete().await()
+        } catch (e: Exception) {
+            Log.w(tag, "deleteCustomerFromCloud error: ${e.message}")
+        }
+    }
+
+    suspend fun saveBatchToCloud(email: String, batch: DailyBatchEntry) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val userDoc = db.collection("users").document(sanitizeEmailForPath(email))
+            userDoc.collection("batches").document(batch.id.toString())
+                .set(
+                    mapOf(
+                        "id" to batch.id,
+                        "dateString" to batch.dateString,
+                        "timestamp" to batch.timestamp,
+                        "name" to batch.name,
+                        "pieces" to batch.pieces,
+                        "weightKg" to batch.weightKg,
+                        "notes" to batch.notes,
+                        "isSynced" to true
+                    ),
+                    SetOptions.merge()
+                ).await()
+        } catch (e: Exception) {
+            Log.w(tag, "saveBatchToCloud error: ${e.message}")
+        }
+    }
+
+    suspend fun deleteBatchFromCloud(email: String, batchId: Long) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            db.collection("users").document(sanitizeEmailForPath(email))
+                .collection("batches").document(batchId.toString()).delete().await()
+        } catch (e: Exception) {
+            Log.w(tag, "deleteBatchFromCloud error: ${e.message}")
+        }
+    }
+
+    suspend fun saveSaleToCloud(email: String, sale: SaleTransaction) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val userDoc = db.collection("users").document(sanitizeEmailForPath(email))
+            userDoc.collection("sales").document(sale.id.toString())
+                .set(
+                    mapOf(
+                        "id" to sale.id,
+                        "customerId" to (sale.customerId ?: 0L),
+                        "customerName" to sale.customerName,
+                        "productId" to (sale.productId ?: 0L),
+                        "itemName" to sale.itemName,
+                        "pieces" to sale.pieces,
+                        "weightKg" to sale.weightKg,
+                        "pricePerKg" to sale.pricePerKg,
+                        "totalPrice" to sale.totalPrice,
+                        "dateString" to sale.dateString,
+                        "timestamp" to sale.timestamp,
+                        "isSynced" to true
+                    ),
+                    SetOptions.merge()
+                ).await()
+        } catch (e: Exception) {
+            Log.w(tag, "saveSaleToCloud error: ${e.message}")
+        }
+    }
+
+    suspend fun deleteSaleFromCloud(email: String, saleId: Long) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            db.collection("users").document(sanitizeEmailForPath(email))
+                .collection("sales").document(saleId.toString()).delete().await()
+        } catch (e: Exception) {
+            Log.w(tag, "deleteSaleFromCloud error: ${e.message}")
+        }
+    }
+
+    suspend fun clearUserCloudData(email: String) = withContext(Dispatchers.IO) {
+        if (!isFirebaseConfigured() || email.isBlank()) return@withContext
+        try {
+            val db = FirebaseFirestore.getInstance()
+            val userDoc = db.collection("users").document(sanitizeEmailForPath(email))
+            userDoc.collection("products").get().await().forEach { it.reference.delete().await() }
+            userDoc.collection("customers").get().await().forEach { it.reference.delete().await() }
+            userDoc.collection("batches").get().await().forEach { it.reference.delete().await() }
+            userDoc.collection("sales").get().await().forEach { it.reference.delete().await() }
+            userDoc.delete().await()
+        } catch (e: Exception) {
+            Log.w(tag, "clearUserCloudData error: ${e.message}")
         }
     }
 }

@@ -100,18 +100,18 @@ class GoogleAuthManager(private val context: Context) {
         }
     }
 
-    suspend fun signInWithCredentialManager(webClientId: String?): Result<GoogleAccountInfo> =
+    companion object {
+        const val DEFAULT_WEB_CLIENT_ID = "909277075039-685imdini3hbrvs7t0p607ivurq95lhj.apps.googleusercontent.com"
+    }
+
+    suspend fun signInWithCredentialManager(webClientId: String? = null): Result<GoogleAccountInfo> =
         withContext(Dispatchers.IO) {
             try {
-                if (webClientId.isNullOrBlank()) {
-                    return@withContext Result.failure(
-                        IllegalStateException("Server Web Client ID not provided. Use device account selection.")
-                    )
-                }
+                val clientId = if (!webClientId.isNullOrBlank()) webClientId else DEFAULT_WEB_CLIENT_ID
 
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(webClientId)
+                    .setServerClientId(clientId)
                     .setAutoSelectEnabled(true)
                     .build()
 

@@ -20,6 +20,9 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE id = :id")
     fun getProductById(id: Long): Flow<ProductItem?>
 
+    @Query("SELECT * FROM products WHERE id = :id")
+    suspend fun getProductByIdDirect(id: Long): ProductItem?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProduct(product: ProductItem): Long
 
