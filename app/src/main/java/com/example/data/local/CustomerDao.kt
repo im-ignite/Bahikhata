@@ -31,4 +31,7 @@ interface CustomerDao {
 
     @Query("SELECT COUNT(*) FROM customers")
     suspend fun getCount(): Int
+
+    @Query("DELETE FROM customers")
+    suspend fun deleteAllCustomers()
 }

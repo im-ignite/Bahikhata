@@ -37,4 +37,7 @@ interface DailyBatchDao {
 
     @Query("SELECT COUNT(*) FROM daily_batches")
     suspend fun getCount(): Int
+
+    @Query("DELETE FROM daily_batches")
+    suspend fun deleteAllBatches()
 }

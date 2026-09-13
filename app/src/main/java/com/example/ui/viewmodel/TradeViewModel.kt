@@ -31,11 +31,22 @@ import java.util.Locale
 
 enum class DateRangePreset(val label: String) {
     TODAY("Today"),
+    YESTERDAY("Yesterday"),
     LAST_7_DAYS("Last 7 Days"),
     LAST_30_DAYS("Last 30 Days"),
     THIS_MONTH("This Month"),
-    ALL_TIME("All Time")
+    ALL_TIME("All Time"),
+    SPECIFIC_DATE("Specific Date")
 }
+
+data class ClientSalesSummary(
+    val customerName: String,
+    val totalWeightKg: Double,
+    val totalPieces: Int,
+    val totalAmount: Double,
+    val itemsSummary: String,
+    val salesCount: Int
+)
 
 data class DailyChartPoint(
     val dateLabel: String,
@@ -50,17 +61,20 @@ data class VisualReportMetrics(
     val totalSalesAmount: Double = 0.0,
     val totalTransactions: Int = 0,
     val avgWeightPerPiece: Double = 0.0,
-    val chartPoints: List<DailyChartPoint> = emptyList()
+    val chartPoints: List<DailyChartPoint> = emptyList(),
+    val filteredSales: List<SaleTransaction> = emptyList(),
+    val clientSummaries: List<ClientSalesSummary> = emptyList()
 )
 
 data class TradeUiState(
     val isDarkMode: Boolean = false,
     val language: AppLanguage = AppLanguage.ENGLISH,
     val selectedDateRangePreset: DateRangePreset = DateRangePreset.LAST_7_DAYS,
+    val specificSearchDate: String = "",
     val customStartDate: String = "",
     val customEndDate: String = "",
     val searchFilter: String = "",
-    val activeTab: Int = 0 // 0: Daily Batches, 1: Sales, 2: Products, 3: Reports, 4: Customers
+    val activeTab: Int = 0 // 0: Date Sales, 1: Sales, 2: Products, 3: Reports, 4: Customers
 )
 
 class TradeViewModel(
@@ -86,13 +100,12 @@ class TradeViewModel(
     val allSales: StateFlow<List<SaleTransaction>> = repository.allSales
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Visual Reports combined flow
+    // Visual Reports combined flow (focused on fish sales to clients)
     val reportMetrics: StateFlow<VisualReportMetrics> = combine(
-        allBatches,
         allSales,
         _uiState
-    ) { batches, sales, state ->
-        calculateMetrics(batches, sales, state.selectedDateRangePreset)
+    ) { sales, state ->
+        calculateMetrics(sales, state.selectedDateRangePreset, state.specificSearchDate)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), VisualReportMetrics())
 
     fun setActiveTab(tabIndex: Int) {
@@ -108,7 +121,24 @@ class TradeViewModel(
     }
 
     fun setDateRangePreset(preset: DateRangePreset) {
-        _uiState.value = _uiState.value.copy(selectedDateRangePreset = preset)
+        _uiState.value = _uiState.value.copy(
+            selectedDateRangePreset = preset,
+            specificSearchDate = if (preset == DateRangePreset.SPECIFIC_DATE) _uiState.value.specificSearchDate else ""
+        )
+    }
+
+    fun setSpecificDateSearch(dateStr: String) {
+        _uiState.value = _uiState.value.copy(
+            specificSearchDate = dateStr,
+            selectedDateRangePreset = DateRangePreset.SPECIFIC_DATE
+        )
+    }
+
+    fun clearSpecificDateSearch() {
+        _uiState.value = _uiState.value.copy(
+            specificSearchDate = "",
+            selectedDateRangePreset = DateRangePreset.LAST_7_DAYS
+        )
     }
 
     fun setSearchFilter(query: String) {
@@ -222,6 +252,12 @@ class TradeViewModel(
         repository.unlinkGoogleAccount()
     }
 
+    fun clearAllData() {
+        viewModelScope.launch {
+            repository.clearAllData()
+        }
+    }
+
     // Google Drive CSV Export & Share
     fun exportCsvForGoogleDrive(context: Context): Boolean {
         return try {
@@ -232,7 +268,7 @@ class TradeViewModel(
                 customers = allCustomers.value
             )
 
-            val fileName = "TradeSync_Backup_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv"
+            val fileName = "RAI_FISH_Sales_Export_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.csv"
             val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
             val file = File(exportDir, fileName)
             FileOutputStream(file).use { out ->
@@ -247,8 +283,8 @@ class TradeViewModel(
 
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/csv"
-                putExtra(Intent.EXTRA_SUBJECT, "TradeSync Backup & Export (Google Drive Ready)")
-                putExtra(Intent.EXTRA_TEXT, "Attached is your TradeSync real-time data export for Google Drive cloud backup.")
+                putExtra(Intent.EXTRA_SUBJECT, "RAI FISH Client Sales Report (Google Drive Ready)")
+                putExtra(Intent.EXTRA_TEXT, "Attached is your RAI FISH pond-to-client sales report and customer records.")
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
@@ -263,41 +299,23 @@ class TradeViewModel(
     }
 
     private fun calculateMetrics(
-        batches: List<DailyBatchEntry>,
         sales: List<SaleTransaction>,
-        preset: DateRangePreset
+        preset: DateRangePreset,
+        specificDate: String
     ): VisualReportMetrics {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val cal = Calendar.getInstance()
         val now = cal.time
 
-        val filteredBatches = when (preset) {
-            DateRangePreset.TODAY -> {
-                val todayStr = dateFormat.format(now)
-                batches.filter { it.dateString == todayStr }
-            }
-            DateRangePreset.LAST_7_DAYS -> {
-                cal.add(Calendar.DAY_OF_YEAR, -7)
-                val cutoff = dateFormat.format(cal.time)
-                batches.filter { it.dateString >= cutoff }
-            }
-            DateRangePreset.LAST_30_DAYS -> {
-                cal.add(Calendar.DAY_OF_YEAR, -30)
-                val cutoff = dateFormat.format(cal.time)
-                batches.filter { it.dateString >= cutoff }
-            }
-            DateRangePreset.THIS_MONTH -> {
-                val monthPrefix = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(now)
-                batches.filter { it.dateString.startsWith(monthPrefix) }
-            }
-            DateRangePreset.ALL_TIME -> batches
-        }
-
-        cal.time = now
         val filteredSales = when (preset) {
             DateRangePreset.TODAY -> {
                 val todayStr = dateFormat.format(now)
                 sales.filter { it.dateString == todayStr }
+            }
+            DateRangePreset.YESTERDAY -> {
+                cal.add(Calendar.DAY_OF_YEAR, -1)
+                val yesterdayStr = dateFormat.format(cal.time)
+                sales.filter { it.dateString == yesterdayStr }
             }
             DateRangePreset.LAST_7_DAYS -> {
                 cal.add(Calendar.DAY_OF_YEAR, -7)
@@ -314,26 +332,45 @@ class TradeViewModel(
                 sales.filter { it.dateString.startsWith(monthPrefix) }
             }
             DateRangePreset.ALL_TIME -> sales
+            DateRangePreset.SPECIFIC_DATE -> {
+                if (specificDate.isNotBlank()) {
+                    sales.filter { it.dateString == specificDate.trim() }
+                } else {
+                    sales
+                }
+            }
         }
 
-        val totalWeight = filteredBatches.sumOf { it.weightKg }
-        val totalPieces = filteredBatches.sumOf { it.pieces }
+        val totalWeight = filteredSales.sumOf { it.weightKg }
+        val totalPieces = filteredSales.sumOf { it.pieces }
         val totalSalesAmount = filteredSales.sumOf { it.totalPrice }
-        val transactionsCount = filteredBatches.size + filteredSales.size
+        val transactionsCount = filteredSales.size
         val avgWeight = if (totalPieces > 0) totalWeight / totalPieces else 0.0
 
-        // Daily chart points aggregation
-        val dailyMap = mutableMapOf<String, DailyChartPoint>()
-        filteredBatches.forEach { b ->
-            val existing = dailyMap[b.dateString] ?: DailyChartPoint(b.dateString, 0.0, 0, 0.0)
-            dailyMap[b.dateString] = existing.copy(
-                weightKg = existing.weightKg + b.weightKg,
-                pieces = existing.pieces + b.pieces
+        // Client-wise breakdown of sales: to whom and which clients bought fish!
+        val clientGroupMap = filteredSales.groupBy { it.customerName }
+        val clientSummaries = clientGroupMap.map { (clientName, clientSales) ->
+            val cWeight = clientSales.sumOf { it.weightKg }
+            val cPieces = clientSales.sumOf { it.pieces }
+            val cTotal = clientSales.sumOf { it.totalPrice }
+            val itemsStr = clientSales.map { "${it.itemName} (${it.weightKg}kg)" }.distinct().joinToString(", ")
+            ClientSalesSummary(
+                customerName = clientName,
+                totalWeightKg = cWeight,
+                totalPieces = cPieces,
+                totalAmount = cTotal,
+                itemsSummary = itemsStr,
+                salesCount = clientSales.size
             )
-        }
+        }.sortedByDescending { it.totalAmount }
+
+        // Daily chart points aggregation for sales trends
+        val dailyMap = mutableMapOf<String, DailyChartPoint>()
         filteredSales.forEach { s ->
             val existing = dailyMap[s.dateString] ?: DailyChartPoint(s.dateString, 0.0, 0, 0.0)
             dailyMap[s.dateString] = existing.copy(
+                weightKg = existing.weightKg + s.weightKg,
+                pieces = existing.pieces + s.pieces,
                 salesAmount = existing.salesAmount + s.totalPrice
             )
         }
@@ -346,7 +383,9 @@ class TradeViewModel(
             totalSalesAmount = totalSalesAmount,
             totalTransactions = transactionsCount,
             avgWeightPerPiece = avgWeight,
-            chartPoints = sortedPoints
+            chartPoints = sortedPoints,
+            filteredSales = filteredSales.sortedByDescending { it.timestamp },
+            clientSummaries = clientSummaries
         )
     }
 

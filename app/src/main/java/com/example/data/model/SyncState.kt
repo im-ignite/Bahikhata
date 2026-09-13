@@ -1,12 +1,12 @@
 package com.example.data.model
 
 data class GoogleAccountInfo(
-    val email: String = "trader.sync@gmail.com",
-    val displayName: String = "Sync Master",
-    val isLinked: Boolean = true,
-    val driveFolder: String = "Google Drive/TradeSync_Backups",
-    val autoSyncEnabled: Boolean = true,
-    val lastSyncTimestamp: Long = System.currentTimeMillis() - 15 * 60 * 1000L
+    val email: String = "",
+    val displayName: String = "",
+    val isLinked: Boolean = false,
+    val driveFolder: String = "Google Drive/RaiFish_Backups",
+    val autoSyncEnabled: Boolean = false,
+    val lastSyncTimestamp: Long = 0L
 )
 
 enum class SyncStatus {

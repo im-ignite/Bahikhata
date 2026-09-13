@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "TradeSync"
+rootProject.name = "RAI FISH"
 
 include(":app")

@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Settings
@@ -27,10 +28,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
+import com.example.ui.theme.DangerRed
 import com.example.ui.theme.TealPrimary
 import com.example.ui.util.AppLanguage
 import com.example.ui.util.AppStrings
@@ -50,8 +58,11 @@ fun SettingsDialog(
     currentLanguage: AppLanguage,
     strings: AppStrings,
     onLanguageSelected: (AppLanguage) -> Unit,
+    onClearAllData: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
+    var showConfirmClearDialog by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -80,7 +91,7 @@ fun SettingsDialog(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "TradeSync Settings & Preferences",
+                        text = "RAI FISH Settings & Preferences",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -173,6 +184,47 @@ fun SettingsDialog(
                         }
                     }
                 }
+
+                // Clear All Data Action (Erase Test Data / Reset Database)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { showConfirmClearDialog = true }
+                        .testTag("clear_all_data_card"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = DangerRed.copy(alpha = 0.08f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteForever,
+                            contentDescription = null,
+                            tint = DangerRed,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = strings.clearAllDataTitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = DangerRed
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = strings.clearAllDataSub,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -186,7 +238,52 @@ fun SettingsDialog(
             }
         }
     )
+
+    if (showConfirmClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmClearDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.DeleteForever,
+                    contentDescription = null,
+                    tint = DangerRed,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = strings.clearAllDataConfirmTitle,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = strings.clearAllDataConfirmMsg,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onClearAllData()
+                        showConfirmClearDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = DangerRed),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.testTag("confirm_clear_all_btn")
+                ) {
+                    Text("Clear Everything")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmClearDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
+
 
 @Composable
 private fun LanguageOptionCard(

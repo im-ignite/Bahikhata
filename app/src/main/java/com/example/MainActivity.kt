@@ -357,15 +357,27 @@ fun MainAppScreen(
             ) { targetTab ->
                 when (targetTab) {
                     0 -> DashboardDailyScreen(
-                        batches = batches,
+                        sales = sales,
+                        customers = customers,
+                        products = products,
                         accountInfo = googleAccount,
                         syncStatus = syncStatus,
                         lastSyncLog = lastSyncLog,
-                        onAddBatch = { name, pcs, wt, notes, date ->
-                            viewModel.addDailyBatch(name, pcs, wt, notes, date)
-                            Toast.makeText(context, "Batch saved & queued for Drive sync", Toast.LENGTH_SHORT).show()
+                        onRecordSale = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, date ->
+                            viewModel.recordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, date)
+                            Toast.makeText(context, "Fish sale recorded & queued for Drive sync", Toast.LENGTH_SHORT).show()
                         },
-                        onDeleteBatch = { viewModel.deleteDailyBatch(it) },
+                        onUpdateSale = { updated ->
+                            viewModel.updateSale(updated)
+                            Toast.makeText(context, "Sale record updated", Toast.LENGTH_SHORT).show()
+                        },
+                        onDeleteSale = { toDelete ->
+                            viewModel.deleteSale(toDelete)
+                            Toast.makeText(context, "Sale record deleted", Toast.LENGTH_SHORT).show()
+                        },
+                        onAddCustomer = { name, phone, address, notes ->
+                            viewModel.addCustomer(name, phone, address, notes)
+                        },
                         onSyncNow = { viewModel.triggerCloudSync() },
                         onToggleAutoSync = { viewModel.toggleAutoSync(it) },
                         onExportCsv = {
@@ -419,9 +431,12 @@ fun MainAppScreen(
                     3 -> ReportsScreen(
                         metrics = reportMetrics,
                         selectedPreset = uiState.selectedDateRangePreset,
+                        specificSearchDate = uiState.specificSearchDate,
                         batches = batches,
                         sales = sales,
                         onSelectPreset = { viewModel.setDateRangePreset(it) },
+                        onSearchSpecificDate = { viewModel.setSpecificDateSearch(it) },
+                        onClearSpecificDate = { viewModel.clearSpecificDateSearch() },
                         onExportCsvForDrive = {
                             val success = viewModel.exportCsvForGoogleDrive(context)
                             if (!success) {
@@ -463,6 +478,10 @@ fun MainAppScreen(
                 else
                     "Language switched to English"
                 Toast.makeText(context, toastMsg, Toast.LENGTH_SHORT).show()
+            },
+            onClearAllData = {
+                viewModel.clearAllData()
+                Toast.makeText(context, strings.clearAllDataSuccess, Toast.LENGTH_SHORT).show()
             },
             onDismiss = { showSettingsDialog = false }
         )

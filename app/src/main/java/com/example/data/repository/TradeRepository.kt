@@ -34,7 +34,7 @@ class TradeRepository(
     private val _syncStatus = MutableStateFlow(SyncStatus.IDLE)
     val syncStatus = _syncStatus.asStateFlow()
 
-    private val _lastSyncLog = MutableStateFlow("All data synced with Google Drive cloud backup")
+    private val _lastSyncLog = MutableStateFlow("Google Drive backup ready")
     val lastSyncLog = _lastSyncLog.asStateFlow()
 
     // Flows
@@ -53,6 +53,13 @@ class TradeRepository(
 
     fun getSalesForCustomer(customerId: Long): Flow<List<SaleTransaction>> {
         return saleDao.getSalesForCustomer(customerId)
+    }
+
+    suspend fun clearAllData() = withContext(Dispatchers.IO) {
+        saleDao.deleteAllSales()
+        batchDao.deleteAllBatches()
+        customerDao.deleteAllCustomers()
+        productDao.deleteAllProducts()
     }
 
     // Daily Batch Operations

@@ -120,9 +120,9 @@ fun SummaryMetricsGrid(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             MetricStatCard(
-                title = "Total Weight",
+                title = "Total Fish Weight",
                 value = "${String.format("%.1f", totalWeightKg)} kg",
-                subtitle = "Logged in records",
+                subtitle = "Sold to clients",
                 icon = Icons.Default.FitnessCenter,
                 iconTint = TealPrimary,
                 iconBg = TealPrimary.copy(alpha = 0.12f),
@@ -130,9 +130,9 @@ fun SummaryMetricsGrid(
             )
 
             MetricStatCard(
-                title = "Total Pieces",
+                title = "Fish Pieces",
                 value = "$totalPieces pcs",
-                subtitle = "Batch items counted",
+                subtitle = "Harvested & sold",
                 icon = Icons.Default.Inventory2,
                 iconTint = CyanSecondary,
                 iconBg = CyanSecondary.copy(alpha = 0.12f),
@@ -145,9 +145,9 @@ fun SummaryMetricsGrid(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             MetricStatCard(
-                title = "Total Sales",
+                title = "Total Sales (₹)",
                 value = "₹${String.format("%.2f", totalSalesAmount)}",
-                subtitle = "Calculated from weight",
+                subtitle = "Total revenue",
                 icon = Icons.Default.AttachMoney,
                 iconTint = AmberAccent,
                 iconBg = AmberAccent.copy(alpha = 0.12f),
@@ -155,9 +155,9 @@ fun SummaryMetricsGrid(
             )
 
             MetricStatCard(
-                title = "Transactions",
-                value = "$transactionCount logs",
-                subtitle = "Batches & orders",
+                title = "Client Sales",
+                value = "$transactionCount orders",
+                subtitle = "Client sales logs",
                 icon = Icons.Default.Receipt,
                 iconTint = SuccessGreen,
                 iconBg = SuccessGreen.copy(alpha = 0.12f),
