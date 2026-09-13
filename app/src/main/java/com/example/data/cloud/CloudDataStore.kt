@@ -30,8 +30,12 @@ class CloudDataStore(private val context: Context) {
 
     private fun isFirebaseConfigured(): Boolean {
         return try {
+            if (FirebaseApp.getApps(context).isEmpty()) {
+                FirebaseApp.initializeApp(context)
+            }
             FirebaseApp.getApps(context).isNotEmpty()
         } catch (e: Exception) {
+            Log.w(tag, "Firebase initialization check: ${e.message}")
             false
         }
     }
