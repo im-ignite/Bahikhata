@@ -1,5 +1,9 @@
 package com.example.data.repository
 
+import android.content.Context
+import android.content.Intent
+import com.example.data.auth.GoogleAuthManager
+import com.example.data.cloud.CloudDataStore
 import com.example.data.local.AppDatabase
 import com.example.data.model.Customer
 import com.example.data.model.DailyBatchEntry
@@ -8,11 +12,14 @@ import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
 import com.example.data.model.SyncStatus
 import com.example.notification.NotificationHelper
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -20,22 +27,37 @@ import java.util.Locale
 
 class TradeRepository(
     private val database: AppDatabase,
-    private val notificationHelper: NotificationHelper
+    private val notificationHelper: NotificationHelper,
+    private val context: Context
 ) {
     private val batchDao = database.dailyBatchDao()
     private val productDao = database.productDao()
     private val customerDao = database.customerDao()
     private val saleDao = database.saleDao()
 
-    // Real-time Cloud / Google Drive Sync State
-    private val _googleAccount = MutableStateFlow(GoogleAccountInfo())
-    val googleAccount = _googleAccount.asStateFlow()
+    val authManager = GoogleAuthManager(context)
+    val cloudDataStore = CloudDataStore(context)
+
+    val googleAccount: StateFlow<GoogleAccountInfo> = authManager.accountInfo
 
     private val _syncStatus = MutableStateFlow(SyncStatus.IDLE)
     val syncStatus = _syncStatus.asStateFlow()
 
-    private val _lastSyncLog = MutableStateFlow("Google Drive backup ready")
+    private val _lastSyncLog = MutableStateFlow("Google Account cloud backup ready")
     val lastSyncLog = _lastSyncLog.asStateFlow()
+
+    private val repoScope = CoroutineScope(Dispatchers.IO)
+
+    init {
+        // If user is already linked with Google account, trigger silent initial sync
+        repoScope.launch {
+            val account = authManager.accountInfo.value
+            if (account.isLinked && account.email.isNotBlank()) {
+                pullDataFromCloud(account.email)
+                triggerCloudSync(notifyUser = false)
+            }
+        }
+    }
 
     // Flows
     val allBatches: Flow<List<DailyBatchEntry>> = batchDao.getAllBatches()
@@ -60,6 +82,10 @@ class TradeRepository(
         batchDao.deleteAllBatches()
         customerDao.deleteAllCustomers()
         productDao.deleteAllProducts()
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.uploadToCloud(account.email, emptyList(), emptyList(), emptyList(), emptyList())
+        }
     }
 
     // Daily Batch Operations
@@ -79,13 +105,12 @@ class TradeRepository(
             isSynced = false
         )
         batchDao.insertBatch(entry)
-        if (_googleAccount.value.autoSyncEnabled) {
-            triggerCloudSync(false)
-        }
+        autoSyncIfEnabled()
     }
 
     suspend fun deleteBatch(entry: DailyBatchEntry) = withContext(Dispatchers.IO) {
         batchDao.deleteBatch(entry)
+        autoSyncIfEnabled()
     }
 
     // Product & Inventory Operations
@@ -104,14 +129,17 @@ class TradeRepository(
             category = category
         )
         productDao.insertProduct(product)
+        autoSyncIfEnabled()
     }
 
     suspend fun updateProduct(product: ProductItem) = withContext(Dispatchers.IO) {
         productDao.updateProduct(product)
+        autoSyncIfEnabled()
     }
 
     suspend fun deleteProduct(product: ProductItem) = withContext(Dispatchers.IO) {
         productDao.deleteProduct(product)
+        autoSyncIfEnabled()
     }
 
     // Customer CRM Operations
@@ -127,15 +155,19 @@ class TradeRepository(
             address = address,
             notes = notes
         )
-        customerDao.insertCustomer(customer)
+        val id = customerDao.insertCustomer(customer)
+        autoSyncIfEnabled()
+        id
     }
 
     suspend fun updateCustomer(customer: Customer) = withContext(Dispatchers.IO) {
         customerDao.updateCustomer(customer)
+        autoSyncIfEnabled()
     }
 
     suspend fun deleteCustomer(customer: Customer) = withContext(Dispatchers.IO) {
         customerDao.deleteCustomer(customer)
+        autoSyncIfEnabled()
     }
 
     // Sales & Automatic Inventory Deduction
@@ -169,15 +201,8 @@ class TradeRepository(
             productDao.deductInventory(productId, pieces, weightKg)
         }
 
-        // Check for low stock notification
-        if (productId != null) {
-            // Check inventory count
-            notificationHelper.sendSaleRecordedNotification(customerName, totalPrice, weightKg)
-        }
-
-        if (_googleAccount.value.autoSyncEnabled) {
-            triggerCloudSync(false)
-        }
+        notificationHelper.sendSaleRecordedNotification(customerName, totalPrice, weightKg)
+        autoSyncIfEnabled()
     }
 
     suspend fun updateSale(sale: SaleTransaction) = withContext(Dispatchers.IO) {
@@ -187,70 +212,150 @@ class TradeRepository(
             isSynced = false
         )
         saleDao.updateSale(updatedSale)
-        if (_googleAccount.value.autoSyncEnabled) {
-            triggerCloudSync(false)
-        }
+        autoSyncIfEnabled()
     }
 
     suspend fun deleteSale(sale: SaleTransaction) = withContext(Dispatchers.IO) {
         saleDao.deleteSale(sale)
-        if (_googleAccount.value.autoSyncEnabled) {
-            triggerCloudSync(false)
+        autoSyncIfEnabled()
+    }
+
+    private fun autoSyncIfEnabled() {
+        if (authManager.accountInfo.value.isLinked && authManager.accountInfo.value.autoSyncEnabled) {
+            repoScope.launch {
+                triggerCloudSync(notifyUser = false)
+            }
         }
     }
 
-    // Google Account Linking
-    fun linkGoogleAccount(email: String, displayName: String) {
-        _googleAccount.value = _googleAccount.value.copy(
-            email = email,
-            displayName = displayName,
-            isLinked = true,
-            lastSyncTimestamp = System.currentTimeMillis()
-        )
+    // Google Account Linking & Auth
+    fun getDeviceGoogleAccounts(): List<String> {
+        return authManager.getDeviceGoogleAccounts()
     }
 
-    fun unlinkGoogleAccount() {
-        _googleAccount.value = _googleAccount.value.copy(
-            isLinked = false
-        )
+    fun createSystemAccountPickerIntent(): Intent {
+        return authManager.createSystemAccountPickerIntent()
+    }
+
+    suspend fun signInWithGoogleAccount(email: String, customName: String? = null) = withContext(Dispatchers.IO) {
+        val info = authManager.completeSignInWithEmail(email, customName)
+        // Immediately restore any cloud data stored under this Google account
+        pullDataFromCloud(info.email)
+        triggerCloudSync(notifyUser = false)
+    }
+
+    suspend fun signInWithCredentialManager(webClientId: String?): Result<GoogleAccountInfo> = withContext(Dispatchers.IO) {
+        val res = authManager.signInWithCredentialManager(webClientId)
+        res.onSuccess { info ->
+            pullDataFromCloud(info.email)
+            triggerCloudSync(notifyUser = false)
+        }
+        res
+    }
+
+    fun signOutGoogleAccount() {
+        authManager.signOut()
+        _lastSyncLog.value = "Signed out. Data remains stored locally."
     }
 
     fun toggleAutoSync(enabled: Boolean) {
-        _googleAccount.value = _googleAccount.value.copy(
-            autoSyncEnabled = enabled
-        )
+        authManager.toggleAutoSync(enabled)
     }
 
-    // Google Drive & Cloud Synchronization Simulation Engine
-    suspend fun triggerCloudSync(notifyUser: Boolean = true) = withContext(Dispatchers.IO) {
-        if (!_googleAccount.value.isLinked) return@withContext
+    // Cross-device Cloud Sync Engine: Pull data from online store
+    suspend fun pullDataFromCloud(email: String): Int = withContext(Dispatchers.IO) {
+        if (email.isBlank()) return@withContext 0
+        try {
+            val payload = cloudDataStore.fetchCloudData(email) ?: return@withContext 0
+            var restoredCount = 0
+
+            if (payload.products.isNotEmpty()) {
+                productDao.insertAll(payload.products)
+                restoredCount += payload.products.size
+            }
+            if (payload.customers.isNotEmpty()) {
+                customerDao.insertAll(payload.customers)
+                restoredCount += payload.customers.size
+            }
+            if (payload.batches.isNotEmpty()) {
+                batchDao.insertAll(payload.batches)
+                restoredCount += payload.batches.size
+            }
+            if (payload.sales.isNotEmpty()) {
+                saleDao.insertAll(payload.sales)
+                restoredCount += payload.sales.size
+            }
+
+            if (restoredCount > 0) {
+                authManager.updateSyncMetadata(System.currentTimeMillis(), restoredCount)
+                _lastSyncLog.value = "Restored $restoredCount records from Google Cloud"
+            }
+            return@withContext restoredCount
+        } catch (e: Exception) {
+            return@withContext 0
+        }
+    }
+
+    // Dual-write Cloud Synchronization Engine
+    suspend fun triggerCloudSync(notifyUser: Boolean = true): Boolean = withContext(Dispatchers.IO) {
+        val account = authManager.accountInfo.value
+        if (!account.isLinked || account.email.isBlank()) {
+            _lastSyncLog.value = "Please sign in with Google to sync data online"
+            return@withContext false
+        }
 
         _syncStatus.value = SyncStatus.SYNCING
+        _lastSyncLog.value = "Syncing with Google Cloud..."
+
         try {
-            // Emulate real cloud handshake & backup serialization
-            delay(1200)
+            // 1. Pull remote updates first so nothing is overwritten
+            val cloudPayload = cloudDataStore.fetchCloudData(account.email)
+            if (cloudPayload != null) {
+                if (cloudPayload.products.isNotEmpty()) productDao.insertAll(cloudPayload.products)
+                if (cloudPayload.customers.isNotEmpty()) customerDao.insertAll(cloudPayload.customers)
+                if (cloudPayload.batches.isNotEmpty()) batchDao.insertAll(cloudPayload.batches)
+                if (cloudPayload.sales.isNotEmpty()) saleDao.insertAll(cloudPayload.sales)
+            }
+
+            // 2. Fetch combined local records
+            val currentProducts = productDao.getAllProductsList()
+            val currentCustomers = customerDao.getAllCustomersList()
+            val currentBatches = batchDao.getAllBatchesList()
+            val currentSales = saleDao.getAllSalesList()
+
+            // 3. Upload combined records to Cloud
+            val success = cloudDataStore.uploadToCloud(
+                email = account.email,
+                products = currentProducts,
+                customers = currentCustomers,
+                batches = currentBatches,
+                sales = currentSales
+            )
+
             val now = System.currentTimeMillis()
             batchDao.markAllAsSynced(now)
             saleDao.markAllAsSynced()
 
-            _googleAccount.value = _googleAccount.value.copy(
-                lastSyncTimestamp = now
-            )
+            val totalSynced = currentProducts.size + currentCustomers.size + currentBatches.size + currentSales.size
+            authManager.updateSyncMetadata(now, totalSynced)
+
             _syncStatus.value = SyncStatus.SUCCESS
             val timeStr = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(now))
-            _lastSyncLog.value = "Synced with Google Drive at $timeStr"
+            _lastSyncLog.value = "Synced with Google Cloud at $timeStr ($totalSynced records)"
 
             if (notifyUser) {
                 notificationHelper.sendSyncNotification(
-                    "Google Drive Backup Complete",
-                    "All inventory, daily batches, and sales synced to ${_googleAccount.value.driveFolder}"
+                    "Google Cloud Synced",
+                    "Stored $totalSynced records online for ${account.email}"
                 )
             }
+            return@withContext success
         } catch (e: Exception) {
             _syncStatus.value = SyncStatus.ERROR
-            _lastSyncLog.value = "Sync failed: ${e.message}"
+            _lastSyncLog.value = "Sync failed: ${e.localizedMessage ?: "Unknown error"}"
+            return@withContext false
         } finally {
-            delay(1500)
+            delay(1200)
             _syncStatus.value = SyncStatus.IDLE
         }
     }
@@ -263,9 +368,9 @@ class TradeRepository(
         customers: List<Customer>
     ): String {
         val sb = StringBuilder()
-        sb.append("TradeSync Export Data\n")
+        sb.append("RAI FISH Cloud Export Data\n")
         sb.append("Generated At,${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())}\n")
-        sb.append("Google Drive Linked Account,${_googleAccount.value.email}\n\n")
+        sb.append("Google Account,${authManager.accountInfo.value.email}\n\n")
 
         // 1. Daily Batches
         sb.append("--- DAILY INVENTORY & BATCH METRICS ---\n")
@@ -284,7 +389,7 @@ class TradeRepository(
         sb.append("\n")
 
         // 3. Products Catalog & Price basis
-        sb.append("--- PRODUCTS CATALOG (MAIN PROFILE) ---\n")
+        sb.append("--- PRODUCTS CATALOG (FISH SPECIES) ---\n")
         sb.append("Product ID,Item Name,Category,Price Basis (₹/kg),Stock Pieces,Stock Weight (kg)\n")
         products.forEach { p ->
             sb.append("${p.id},\"${p.name.replace("\"", "\"\"")}\",\"${p.category}\",${p.pricePerKg},${p.stockPieces},${p.stockWeightKg}\n")

@@ -118,6 +118,24 @@ class AppStrings(val language: AppLanguage) {
     val noSalesOnDateMsg: String get() = if (isHindi) "इस तारीख को कोई मछली बिक्री दर्ज नहीं हुई है।" else "No fish sales recorded for this date."
     val quickPickDate: String get() = if (isHindi) "तारीख बदलें" else "Change Date"
 
+    // Google Sign-In & Cloud Sync
+    val googleSignInTitle: String get() = if (isHindi) "Google खाते से साइन इन करें" else "Sign in with Google"
+    val googleSignInSubtitle: String get() = if (isHindi) "RAI FISH में जारी रखने के लिए Google खाता चुनें" else "Choose a Google account to continue to RAI FISH"
+    val googleSignInExplanation: String get() = if (isHindi) "अपने तालाब की मछली बिक्री, ग्राहक और दैनिक रिकॉर्ड को अपने सभी डिवाइस पर सुरक्षित रूप से सिंक करें" else "Sync fish pond sales, customers & records securely across all your Android devices"
+    val chooseAccountPrompt: String get() = if (isHindi) "डिवाइस पर मौजूद Google खाते" else "Google Accounts on this Device"
+    val chooseOtherAccount: String get() = if (isHindi) "अन्य Google खाता चुनें" else "Choose another Google Account"
+    val continueOffline: String get() = if (isHindi) "ऑफ़लाइन जारी रखें" else "Continue Offline"
+    val cloudSyncOnlineStatus: String get() = if (isHindi) "क्लाउड कनेक्टेड" else "Cloud Connected"
+    val googleAccountHeader: String get() = if (isHindi) "Google खाता एवं क्लाउड सिंक" else "Google Account & Cloud Sync"
+    val syncNowButton: String get() = if (isHindi) "अभी क्लाउड सिंक करें" else "Sync with Cloud Now"
+    val autoSyncTitle: String get() = if (isHindi) "स्वचालित ऑनलाइन सिंक (Auto-Sync)" else "Automatic Online Sync"
+    val autoSyncSubtitle: String get() = if (isHindi) "बिक्री दर्ज करते ही तुरंत Google क्लाउड में सुरक्षित हो जाएगी" else "Instantly stores sales and records to Google Cloud as you enter them"
+    val switchAccount: String get() = if (isHindi) "खाता बदलें" else "Switch Account"
+    val signOutButton: String get() = if (isHindi) "साइन आउट करें" else "Sign Out"
+    val signedInAs: String get() = if (isHindi) "साइन इन खाता" else "Signed in as"
+    val enterCustomGoogleEmail: String get() = if (isHindi) "Google ईमेल दर्ज करें" else "Enter Google Email"
+    val quickSignInBtn: String get() = if (isHindi) "साइन इन करें" else "Sign In"
+
 }
 
 val LocalAppStrings = compositionLocalOf { AppStrings(AppLanguage.ENGLISH) }

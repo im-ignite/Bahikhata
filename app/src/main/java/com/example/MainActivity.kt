@@ -47,6 +47,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -61,12 +63,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,6 +88,9 @@ import com.example.data.local.AppDatabase
 import com.example.data.model.SyncStatus
 import com.example.data.repository.TradeRepository
 import com.example.notification.NotificationHelper
+import com.example.ui.components.GoogleAccountProfileDialog
+import com.example.ui.components.GoogleLogoIcon
+import com.example.ui.components.GoogleSignInPromptDialog
 import com.example.ui.components.SettingsDialog
 import com.example.ui.screens.CatalogScreen
 import com.example.ui.screens.CustomersScreen
@@ -105,7 +112,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel: TradeViewModel by viewModels {
         val db = AppDatabase.getDatabase(applicationContext, lifecycleScope)
         val notifHelper = NotificationHelper(applicationContext)
-        val repository = TradeRepository(db, notifHelper)
+        val repository = TradeRepository(db, notifHelper, applicationContext)
         TradeViewModel.Factory(repository)
     }
 
@@ -153,6 +160,19 @@ fun MainAppScreen(
     val reportMetrics by viewModel.reportMetrics.collectAsStateWithLifecycle()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showGoogleSignInPrompt by remember { mutableStateOf(false) }
+    var showGoogleProfileDialog by remember { mutableStateOf(false) }
+    var hasAutoPromptedLogin by rememberSaveable { mutableStateOf(false) }
+
+    // Prompt user to sign in with Google on startup like major apps
+    LaunchedEffect(googleAccount.isLinked) {
+        if (!googleAccount.isLinked && !hasAutoPromptedLogin) {
+            hasAutoPromptedLogin = true
+            kotlinx.coroutines.delay(600)
+            showGoogleSignInPrompt = true
+        }
+    }
+
     val strings = remember(uiState.language) { AppStrings(uiState.language) }
 
     // Notification permission request for Android 13+
@@ -206,8 +226,16 @@ fun MainAppScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
                                 .clickable {
-                                    viewModel.triggerCloudSync()
-                                    Toast.makeText(context, "Syncing with Google Drive...", Toast.LENGTH_SHORT).show()
+                                    if (googleAccount.isLinked) {
+                                        viewModel.triggerCloudSync()
+                                        Toast.makeText(
+                                            context,
+                                            if (strings.isHindi) "Google क्लाउड से सिंक हो रहा है..." else "Syncing with Google Cloud...",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        showGoogleSignInPrompt = true
+                                    }
                                 }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                                 .testTag("sync_status_indicator")
@@ -237,7 +265,7 @@ fun MainAppScreen(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = if (googleAccount.isLinked) strings.syncStatusDriveSynced else strings.syncStatusOffline,
+                                        text = if (googleAccount.isLinked) strings.cloudSyncOnlineStatus else strings.syncStatusOffline,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontSize = 11.sp,
                                         color = if (googleAccount.isLinked) SuccessGreen else Color.Gray
@@ -248,6 +276,64 @@ fun MainAppScreen(
                     }
                 },
                 actions = {
+                    // Google Account Profile Chip or Sign-In Button
+                    if (googleAccount.isLinked) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(TealPrimary.copy(alpha = 0.12f))
+                                .clickable { showGoogleProfileDialog = true }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .testTag("google_profile_btn")
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .clip(CircleShape)
+                                        .background(TealPrimary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = googleAccount.initials,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = googleAccount.displayName.split(" ").firstOrNull()?.take(8)
+                                        ?: googleAccount.email.substringBefore("@").take(8),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TealPrimary
+                                )
+                            }
+                        }
+                    } else {
+                        Button(
+                            onClick = { showGoogleSignInPrompt = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier
+                                .height(32.dp)
+                                .testTag("open_google_login_prompt_btn")
+                        ) {
+                            GoogleLogoIcon(sizeDp = 16)
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = strings.quickSignInBtn,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
                     // Settings button at top
                     IconButton(
                         onClick = { showSettingsDialog = true },
@@ -467,10 +553,62 @@ fun MainAppScreen(
         }
     }
 
+    if (showGoogleSignInPrompt) {
+        GoogleSignInPromptDialog(
+            strings = strings,
+            onSignInSuccess = { email, name ->
+                viewModel.signInWithGoogleAccount(email, name)
+                val msg = if (strings.isHindi) "Google खाता $email सिंक हो गया" else "Signed in with $email. Syncing cloud data..."
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                showGoogleSignInPrompt = false
+            },
+            onDismiss = { showGoogleSignInPrompt = false },
+            createAccountPickerIntent = { viewModel.createSystemAccountPickerIntent() },
+            deviceAccounts = viewModel.getDeviceGoogleAccounts()
+        )
+    }
+
+    if (showGoogleProfileDialog) {
+        GoogleAccountProfileDialog(
+            account = googleAccount,
+            syncStatus = syncStatus,
+            lastSyncLog = lastSyncLog,
+            strings = strings,
+            onSyncNow = {
+                viewModel.triggerCloudSync()
+                Toast.makeText(
+                    context,
+                    if (strings.isHindi) "क्लाउड सिंक शुरू हुआ..." else "Syncing with Google Cloud...",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onToggleAutoSync = { enabled ->
+                viewModel.toggleAutoSync(enabled)
+            },
+            onSwitchAccount = {
+                showGoogleSignInPrompt = true
+            },
+            onSignOut = {
+                viewModel.signOutGoogleAccount()
+                Toast.makeText(context, "Signed out. Data preserved locally.", Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = { showGoogleProfileDialog = false }
+        )
+    }
+
     if (showSettingsDialog) {
         SettingsDialog(
             currentLanguage = uiState.language,
             strings = strings,
+            googleAccount = googleAccount,
+            onOpenGoogleSignIn = {
+                showSettingsDialog = false
+                showGoogleSignInPrompt = true
+            },
+            onOpenGoogleProfile = {
+                showSettingsDialog = false
+                showGoogleProfileDialog = true
+            },
             onLanguageSelected = { newLang ->
                 viewModel.setLanguage(newLang)
                 val toastMsg = if (newLang == AppLanguage.HINDI)

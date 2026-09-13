@@ -14,6 +14,9 @@ interface DailyBatchDao {
     @Query("SELECT * FROM daily_batches ORDER BY timestamp DESC")
     fun getAllBatches(): Flow<List<DailyBatchEntry>>
 
+    @Query("SELECT * FROM daily_batches ORDER BY timestamp DESC")
+    suspend fun getAllBatchesList(): List<DailyBatchEntry>
+
     @Query("SELECT * FROM daily_batches WHERE dateString = :dateString ORDER BY timestamp DESC")
     fun getBatchesForDate(dateString: String): Flow<List<DailyBatchEntry>>
 

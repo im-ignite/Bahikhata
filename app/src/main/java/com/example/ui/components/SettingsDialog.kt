@@ -53,10 +53,16 @@ import com.example.ui.theme.TealPrimary
 import com.example.ui.util.AppLanguage
 import com.example.ui.util.AppStrings
 
+import com.example.data.model.GoogleAccountInfo
+import com.example.ui.theme.SuccessGreen
+
 @Composable
 fun SettingsDialog(
     currentLanguage: AppLanguage,
     strings: AppStrings,
+    googleAccount: GoogleAccountInfo = GoogleAccountInfo(),
+    onOpenGoogleSignIn: () -> Unit = {},
+    onOpenGoogleProfile: () -> Unit = {},
     onLanguageSelected: (AppLanguage) -> Unit,
     onClearAllData: () -> Unit = {},
     onDismiss: () -> Unit
@@ -182,6 +188,54 @@ fun SettingsDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+                }
+
+                // Google Account and Cloud Sync Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            if (googleAccount.isLinked) {
+                                onOpenGoogleProfile()
+                            } else {
+                                onOpenGoogleSignIn()
+                            }
+                        }
+                        .testTag("settings_google_account_card"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (googleAccount.isLinked) TealPrimary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        GoogleLogoIcon(sizeDp = 28)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (googleAccount.isLinked) (googleAccount.displayName.ifBlank { googleAccount.email }) else strings.googleSignInTitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (googleAccount.isLinked) TealPrimary else MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (googleAccount.isLinked) "${googleAccount.email} • ${strings.cloudSyncOnlineStatus}" else strings.googleSignInExplanation,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(if (googleAccount.isLinked) SuccessGreen else Color.Gray, CircleShape)
+                        )
                     }
                 }
 

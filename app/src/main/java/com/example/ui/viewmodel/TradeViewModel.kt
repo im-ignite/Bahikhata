@@ -233,7 +233,7 @@ class TradeViewModel(
         }
     }
 
-    // Cloud & Google Drive sync
+    // Cloud & Google Account Sync
     fun triggerCloudSync() {
         viewModelScope.launch {
             repository.triggerCloudSync(notifyUser = true)
@@ -244,12 +244,30 @@ class TradeViewModel(
         repository.toggleAutoSync(enabled)
     }
 
-    fun linkGoogleAccount(email: String, displayName: String) {
-        repository.linkGoogleAccount(email, displayName)
+    fun getDeviceGoogleAccounts(): List<String> {
+        return repository.getDeviceGoogleAccounts()
+    }
+
+    fun createSystemAccountPickerIntent(): Intent {
+        return repository.createSystemAccountPickerIntent()
+    }
+
+    fun signInWithGoogleAccount(email: String, customName: String? = null) {
+        viewModelScope.launch {
+            repository.signInWithGoogleAccount(email, customName)
+        }
+    }
+
+    fun linkGoogleAccount(email: String, customName: String? = null) {
+        signInWithGoogleAccount(email, customName)
+    }
+
+    fun signOutGoogleAccount() {
+        repository.signOutGoogleAccount()
     }
 
     fun unlinkGoogleAccount() {
-        repository.unlinkGoogleAccount()
+        signOutGoogleAccount()
     }
 
     fun clearAllData() {
