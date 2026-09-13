@@ -14,6 +14,7 @@ import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
 import com.example.data.model.SyncStatus
 import com.example.data.repository.TradeRepository
+import com.example.ui.util.AppLanguage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -54,11 +55,12 @@ data class VisualReportMetrics(
 
 data class TradeUiState(
     val isDarkMode: Boolean = false,
+    val language: AppLanguage = AppLanguage.ENGLISH,
     val selectedDateRangePreset: DateRangePreset = DateRangePreset.LAST_7_DAYS,
     val customStartDate: String = "",
     val customEndDate: String = "",
     val searchFilter: String = "",
-    val activeTab: Int = 0 // 0: Daily Batches, 1: Sales, 2: Catalog/Profile, 3: Reports, 4: Customers
+    val activeTab: Int = 0 // 0: Daily Batches, 1: Sales, 2: Products, 3: Reports, 4: Customers
 )
 
 class TradeViewModel(
@@ -95,6 +97,10 @@ class TradeViewModel(
 
     fun setActiveTab(tabIndex: Int) {
         _uiState.value = _uiState.value.copy(activeTab = tabIndex)
+    }
+
+    fun setLanguage(language: AppLanguage) {
+        _uiState.value = _uiState.value.copy(language = language)
     }
 
     fun setDarkMode(isDark: Boolean) {
@@ -148,6 +154,18 @@ class TradeViewModel(
         }
     }
 
+    fun updateCustomer(customer: Customer) {
+        viewModelScope.launch {
+            repository.updateCustomer(customer)
+        }
+    }
+
+    fun deleteCustomer(customer: Customer) {
+        viewModelScope.launch {
+            repository.deleteCustomer(customer)
+        }
+    }
+
     // Sales recording with weight-based price calculation & inventory deduction
     fun recordSale(
         customerId: Long?,
@@ -170,6 +188,18 @@ class TradeViewModel(
                 pricePerKg = pricePerKg,
                 dateString = dateString
             )
+        }
+    }
+
+    fun updateSale(sale: SaleTransaction) {
+        viewModelScope.launch {
+            repository.updateSale(sale)
+        }
+    }
+
+    fun deleteSale(sale: SaleTransaction) {
+        viewModelScope.launch {
+            repository.deleteSale(sale)
         }
     }
 

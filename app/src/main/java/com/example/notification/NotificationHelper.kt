@@ -111,7 +111,7 @@ class NotificationHelper(private val context: Context) {
             val builder = NotificationCompat.Builder(context, CHANNEL_SYNC)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("New Sale Recorded")
-                .setContentText("Customer: $customerName • ${String.format("%.1f", weight)} kg • $${String.format("%.2f", amount)}")
+                .setContentText("Customer: $customerName • ${String.format("%.1f", weight)} kg • ₹${String.format("%.2f", amount)}")
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(getPendingIntent())
                 .setAutoCancel(true)

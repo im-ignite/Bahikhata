@@ -146,7 +146,7 @@ fun SummaryMetricsGrid(
         ) {
             MetricStatCard(
                 title = "Total Sales",
-                value = "$${String.format("%.2f", totalSalesAmount)}",
+                value = "₹${String.format("%.2f", totalSalesAmount)}",
                 subtitle = "Calculated from weight",
                 icon = Icons.Default.AttachMoney,
                 iconTint = AmberAccent,

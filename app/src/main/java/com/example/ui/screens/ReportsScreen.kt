@@ -230,7 +230,7 @@ fun ReportsScreen(
                                 )
                                 val avgVal = if (metrics.totalWeightKg > 0) metrics.totalSalesAmount / metrics.totalWeightKg else 0.0
                                 Text(
-                                    text = "$${String.format("%.2f", avgVal)}",
+                                    text = "₹${String.format("%.2f", avgVal)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = AmberAccent

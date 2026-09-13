@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.example.data.model.SaleTransaction
 import kotlinx.coroutines.flow.Flow
 
@@ -24,6 +25,9 @@ interface SaleDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(sales: List<SaleTransaction>)
+
+    @Update
+    suspend fun updateSale(sale: SaleTransaction)
 
     @Delete
     suspend fun deleteSale(sale: SaleTransaction)

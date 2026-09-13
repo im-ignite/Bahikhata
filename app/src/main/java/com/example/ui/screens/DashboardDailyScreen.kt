@@ -66,6 +66,7 @@ import com.example.ui.components.LinkGoogleAccountDialog
 import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.SuccessGreen
 import com.example.ui.theme.TealPrimary
+import com.example.ui.util.LocalAppStrings
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -85,6 +86,7 @@ fun DashboardDailyScreen(
     onUnlinkAccount: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     val todayDate = remember {
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -142,7 +144,7 @@ fun DashboardDailyScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "Daily Intake & Weight",
+                                    text = strings.dailyBatchesTitle,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -173,7 +175,7 @@ fun DashboardDailyScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = if (selectedDate.isNotEmpty()) "Today" else "All Dates",
+                                    text = if (selectedDate.isNotEmpty()) strings.presetToday else "All Dates",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
@@ -185,7 +187,7 @@ fun DashboardDailyScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Box(
                                 modifier = Modifier
@@ -196,7 +198,7 @@ fun DashboardDailyScreen(
                             ) {
                                 Column {
                                     Text(
-                                        text = "Day Weight",
+                                        text = strings.totalWeightKpi,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -218,7 +220,7 @@ fun DashboardDailyScreen(
                             ) {
                                 Column {
                                     Text(
-                                        text = "Day Pieces",
+                                        text = strings.totalPiecesKpi,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

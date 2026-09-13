@@ -67,6 +67,7 @@ import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.SuccessGreen
 import com.example.ui.theme.TealPrimary
+import com.example.ui.util.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,6 +79,7 @@ fun CatalogScreen(
     onDeleteProduct: (ProductItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     var showAddDialog by remember { mutableStateOf(false) }
     var productToEdit by remember { mutableStateOf<ProductItem?>(null) }
 
@@ -99,7 +101,7 @@ fun CatalogScreen(
             contentPadding = PaddingValues(top = 12.dp, bottom = 88.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Profile & Business Info Header
+            // Products & Business Info Header
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -121,7 +123,7 @@ fun CatalogScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Person,
+                                    imageVector = Icons.Default.Inventory2,
                                     contentDescription = null,
                                     tint = Color.White,
                                     modifier = Modifier.size(28.dp)
@@ -132,13 +134,13 @@ fun CatalogScreen(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = googleAccount.displayName.ifEmpty { "Main Trader Profile" },
+                                    text = googleAccount.displayName.ifEmpty { strings.productsCatalogTitle },
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = googleAccount.email,
+                                    text = googleAccount.email.ifEmpty { strings.productsSubtitle },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -155,7 +157,7 @@ fun CatalogScreen(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Synced with Google Drive",
+                                        text = strings.syncStatusDriveSynced,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = SuccessGreen,
                                         fontWeight = FontWeight.Medium
@@ -167,7 +169,7 @@ fun CatalogScreen(
                 }
             }
 
-            // Weight-based Pricing Calculator Tool on Main Profile (Requirements 5 & 6)
+            // Weight-based Pricing Calculator Tool on Products (Requirements 5 & 6)
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -194,12 +196,12 @@ fun CatalogScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
-                                    text = "Weight-Based Live Price Calculator",
+                                    text = strings.liveCalculatorTitle,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Type pieces & weight to calculate price and preview inventory deduction",
+                                    text = strings.liveCalculatorSub,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -214,7 +216,7 @@ fun CatalogScreen(
                             onExpandedChange = { calcDropdownExpanded = !calcDropdownExpanded }
                         ) {
                             OutlinedTextField(
-                                value = calcSelectedProduct?.let { "${it.name} (@ $${it.pricePerKg}/kg)" }
+                                value = calcSelectedProduct?.let { "${it.name} (@ ₹${it.pricePerKg}/kg)" }
                                     ?: "Select product to calculate",
                                 onValueChange = {},
                                 readOnly = true,
@@ -233,7 +235,7 @@ fun CatalogScreen(
                             ) {
                                 products.forEach { prod ->
                                     DropdownMenuItem(
-                                        text = { Text("${prod.name} • $${prod.pricePerKg}/kg") },
+                                        text = { Text("${prod.name} • ₹${prod.pricePerKg}/kg") },
                                         onClick = {
                                             calcSelectedProduct = prod
                                             calcDropdownExpanded = false
@@ -287,7 +289,7 @@ fun CatalogScreen(
                             ) {
                                 Column {
                                     Text(
-                                        text = "Formula: ${String.format("%.2f", calcWeight)} kg × $${String.format("%.2f", calcPricePerKg)}/kg",
+                                        text = "Formula: ${String.format("%.2f", calcWeight)} kg × ₹${String.format("%.2f", calcPricePerKg)}/kg",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -299,7 +301,7 @@ fun CatalogScreen(
                                 }
 
                                 Text(
-                                    text = "$${String.format("%.2f", calcResultPrice)}",
+                                    text = "₹${String.format("%.2f", calcResultPrice)}",
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = AmberAccent
@@ -318,13 +320,13 @@ fun CatalogScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Products Catalog (${products.size})",
+                        text = "${strings.productsCatalogTitle} (${products.size})",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
 
                     Text(
-                        text = "Price basis: Weight only",
+                        text = strings.priceBasisWeightOnly,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
@@ -353,7 +355,7 @@ fun CatalogScreen(
                 .padding(20.dp)
                 .testTag("add_product_fab")
         ) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Add Product")
+            Icon(imageVector = Icons.Default.Add, contentDescription = strings.addProductButton)
         }
     }
 
@@ -449,7 +451,7 @@ fun ProductCatalogCard(
                         .padding(horizontal = 10.dp, vertical = 5.dp)
                 ) {
                     Text(
-                        text = "$${String.format("%.2f", product.pricePerKg)} / kg",
+                        text = "₹${String.format("%.2f", product.pricePerKg)} / kg",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.ExtraBold,
                         color = AmberAccent
@@ -516,7 +518,7 @@ fun AddEditProductDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Price is added on weight basis only ($/kg) for automatic calculation during sales and inventory deduction.",
+                    text = "Price is added on weight basis only (₹/kg) for automatic calculation during sales and inventory deduction.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -534,8 +536,8 @@ fun AddEditProductDialog(
                 OutlinedTextField(
                     value = pricePerKgText,
                     onValueChange = { pricePerKgText = it },
-                    label = { Text("Price on Weight Basis ($ / kg) *") },
-                    placeholder = { Text("e.g. 12.50") },
+                    label = { Text("Price on Weight Basis (₹ / kg) *") },
+                    placeholder = { Text("e.g. 120.50") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),

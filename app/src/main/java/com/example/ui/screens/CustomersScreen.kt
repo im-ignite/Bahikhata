@@ -24,6 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationOn
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Customer
 import com.example.data.model.SaleTransaction
+import com.example.ui.components.EditSaleDialog
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.TealPrimary
@@ -69,10 +72,14 @@ fun CustomersScreen(
     customers: List<Customer>,
     sales: List<SaleTransaction>,
     onAddCustomer: (name: String, phone: String, address: String, notes: String) -> Unit,
+    onDeleteCustomer: (Customer) -> Unit = {},
+    onUpdateSale: (SaleTransaction) -> Unit = {},
     onNavigateToSales: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var customerToDelete by remember { mutableStateOf<Customer?>(null) }
+    var saleToEdit by remember { mutableStateOf<SaleTransaction?>(null) }
 
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
@@ -105,7 +112,7 @@ fun CustomersScreen(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Track customer profiles, addresses, phone numbers, and full sales history",
+                                text = "Track customer profiles, delete clients, manage sales history, and edit records",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -134,7 +141,9 @@ fun CustomersScreen(
                 CustomerItemCard(
                     customer = customer,
                     salesHistory = customerSales,
-                    onNewSale = onNavigateToSales
+                    onNewSale = onNavigateToSales,
+                    onDelete = { customerToDelete = customer },
+                    onEditSale = { saleToEdit = it }
                 )
             }
         }
@@ -163,6 +172,66 @@ fun CustomersScreen(
             }
         )
     }
+
+    // Confirm Delete Client Dialog
+    if (customerToDelete != null) {
+        val client = customerToDelete!!
+        AlertDialog(
+            onDismissRequest = { customerToDelete = null },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Delete Client", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete client \"${client.name}\"? This will remove their customer profile from the CRM.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteCustomer(client)
+                        customerToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.testTag("confirm_delete_customer_btn")
+                ) {
+                    Text("Delete Client")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { customerToDelete = null },
+                    modifier = Modifier.testTag("cancel_delete_customer_btn")
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Edit Sale Dialog from customer profile
+    if (saleToEdit != null) {
+        EditSaleDialog(
+            sale = saleToEdit!!,
+            customers = customers,
+            onDismiss = { saleToEdit = null },
+            onConfirm = { updated ->
+                onUpdateSale(updated)
+                saleToEdit = null
+            }
+        )
+    }
 }
 
 @Composable
@@ -170,6 +239,8 @@ fun CustomerItemCard(
     customer: Customer,
     salesHistory: List<SaleTransaction>,
     onNewSale: () -> Unit,
+    onDelete: () -> Unit = {},
+    onEditSale: (SaleTransaction) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -228,20 +299,34 @@ fun CustomerItemCard(
                     }
                 }
 
-                // Call Phone Intent Button
-                if (customer.phoneNumber.isNotBlank()) {
-                    IconButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_DIAL).apply {
-                                data = Uri.parse("tel:${customer.phoneNumber}")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Call Phone Intent Button
+                    if (customer.phoneNumber.isNotBlank()) {
+                        IconButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_DIAL).apply {
+                                    data = Uri.parse("tel:${customer.phoneNumber}")
+                                }
+                                context.startActivity(intent)
                             }
-                            context.startActivity(intent)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Phone,
+                                contentDescription = "Call Customer",
+                                tint = TealPrimary
+                            )
                         }
+                    }
+
+                    // Delete Client Button
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.testTag("delete_customer_${customer.id}")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Phone,
-                            contentDescription = "Call Customer",
-                            tint = TealPrimary
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Client",
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
                         )
                     }
                 }
@@ -279,7 +364,7 @@ fun CustomerItemCard(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "Total Spent: $${String.format("%.2f", totalSpent)}",
+                        text = "Total Spent: ₹${String.format("%.2f", totalSpent)}",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = AmberAccent
@@ -352,7 +437,7 @@ fun CustomerItemCard(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = sale.itemName,
                                         style = MaterialTheme.typography.bodyMedium,
@@ -365,12 +450,28 @@ fun CustomerItemCard(
                                     )
                                 }
 
-                                Text(
-                                    text = "$${String.format("%.2f", sale.totalPrice)}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AmberAccent
-                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "₹${String.format("%.2f", sale.totalPrice)}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AmberAccent
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    IconButton(
+                                        onClick = { onEditSale(sale) },
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .testTag("edit_client_sale_${sale.id}")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit Sale",
+                                            tint = TealPrimary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

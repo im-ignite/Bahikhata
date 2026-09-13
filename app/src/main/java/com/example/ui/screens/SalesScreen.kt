@@ -26,6 +26,9 @@ import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.CurrencyRupee
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Phone
@@ -42,6 +45,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -64,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.Customer
 import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
+import com.example.ui.components.EditSaleDialog
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.DangerRed
@@ -89,9 +94,13 @@ fun SalesScreen(
         dateString: String
     ) -> Unit,
     onAddCustomer: (name: String, phone: String, address: String, notes: String) -> Unit,
+    onUpdateSale: (SaleTransaction) -> Unit = {},
+    onDeleteSale: (SaleTransaction) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showRecordSaleDialog by remember { mutableStateOf(false) }
+    var saleToEdit by remember { mutableStateOf<SaleTransaction?>(null) }
+    var saleToDelete by remember { mutableStateOf<SaleTransaction?>(null) }
 
     val totalSalesRevenue = sales.sumOf { it.totalPrice }
     val totalWeightSold = sales.sumOf { it.weightKg }
@@ -129,7 +138,7 @@ fun SalesScreen(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Automatic weight-based pricing & inventory deduction",
+                                    text = "Automatic weight-based pricing in Rupees (₹) & inventory deduction",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -142,7 +151,7 @@ fun SalesScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.AttachMoney,
+                                    imageVector = Icons.Default.CurrencyRupee,
                                     contentDescription = null,
                                     tint = AmberAccent,
                                     modifier = Modifier.size(24.dp)
@@ -170,7 +179,7 @@ fun SalesScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "$${String.format("%.2f", totalSalesRevenue)}",
+                                        text = "₹${String.format("%.2f", totalSalesRevenue)}",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = AmberAccent
@@ -241,7 +250,7 @@ fun SalesScreen(
                     )
 
                     Text(
-                        text = "Weight × $/kg calculation",
+                        text = "Weight × ₹/kg calculation",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -286,7 +295,11 @@ fun SalesScreen(
                 }
             } else {
                 items(sales, key = { it.id }) { sale ->
-                    SaleTransactionCard(sale = sale)
+                    SaleTransactionCard(
+                        sale = sale,
+                        onEdit = { saleToEdit = sale },
+                        onDelete = { saleToDelete = sale }
+                    )
                 }
             }
         }
@@ -318,11 +331,74 @@ fun SalesScreen(
             onAddCustomer = onAddCustomer
         )
     }
+
+    // Confirm Delete Sale Dialog
+    if (saleToDelete != null) {
+        val saleItem = saleToDelete!!
+        AlertDialog(
+            onDismissRequest = { saleToDelete = null },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Delete Sale Record", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete this sale of \"${saleItem.itemName}\" to ${saleItem.customerName} for ₹${String.format("%.2f", saleItem.totalPrice)}?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteSale(saleItem)
+                        saleToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.testTag("confirm_delete_sale_btn")
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { saleToDelete = null },
+                    modifier = Modifier.testTag("cancel_delete_sale_btn")
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Edit Sale Dialog
+    if (saleToEdit != null) {
+        EditSaleDialog(
+            sale = saleToEdit!!,
+            products = products,
+            customers = customers,
+            onDismiss = { saleToEdit = null },
+            onConfirm = { updated ->
+                onUpdateSale(updated)
+                saleToEdit = null
+            }
+        )
+    }
 }
 
 @Composable
 fun SaleTransactionCard(
     sale: SaleTransaction,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -378,13 +454,13 @@ fun SaleTransactionCard(
                 // Calculated total price highlight
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "$${String.format("%.2f", sale.totalPrice)}",
+                        text = "₹${String.format("%.2f", sale.totalPrice)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold,
                         color = AmberAccent
                     )
                     Text(
-                        text = "@ $${String.format("%.2f", sale.pricePerKg)}/kg",
+                        text = "@ ₹${String.format("%.2f", sale.pricePerKg)}/kg",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -393,7 +469,7 @@ fun SaleTransactionCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Item and weight metrics
+            // Item and weight metrics + Edit/Delete actions
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -403,10 +479,11 @@ fun SaleTransactionCard(
                     text = sale.itemName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
@@ -421,6 +498,8 @@ fun SaleTransactionCard(
                         )
                     }
 
+                    Spacer(modifier = Modifier.width(6.dp))
+
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
@@ -432,6 +511,38 @@ fun SaleTransactionCard(
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = CyanSecondary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Edit Sale Action
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier
+                            .size(30.dp)
+                            .testTag("edit_sale_${sale.id}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Sale",
+                            tint = TealPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    // Delete Sale Action
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier
+                            .size(30.dp)
+                            .testTag("delete_sale_${sale.id}")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Sale",
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.85f),
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
@@ -611,7 +722,7 @@ fun RecordSaleDialog(
                     onExpandedChange = { productDropdownExpanded = !productDropdownExpanded }
                 ) {
                     OutlinedTextField(
-                        value = selectedProduct?.let { "${it.name} ($${it.pricePerKg}/kg)" } ?: "Select product from profile",
+                        value = selectedProduct?.let { "${it.name} (₹${it.pricePerKg}/kg)" } ?: "Select product from profile",
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Product / Commodity *") },
@@ -631,7 +742,7 @@ fun RecordSaleDialog(
                             DropdownMenuItem(
                                 text = {
                                     Column {
-                                        Text("${prod.name} • $${prod.pricePerKg}/kg", fontWeight = FontWeight.SemiBold)
+                                        Text("${prod.name} • ₹${prod.pricePerKg}/kg", fontWeight = FontWeight.SemiBold)
                                         Text("Stock: ${prod.stockPieces} pcs, ${String.format("%.1f", prod.stockWeightKg)} kg", style = MaterialTheme.typography.labelSmall)
                                     }
                                 },
@@ -691,13 +802,13 @@ fun RecordSaleDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Auto Price (${String.format("%.2f", inputWeight)} kg × $${String.format("%.2f", activePricePerKg)}):",
+                                text = "Auto Price (${String.format("%.2f", inputWeight)} kg × ₹${String.format("%.2f", activePricePerKg)}):",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium
                             )
 
                             Text(
-                                text = "$${String.format("%.2f", calculatedTotalPrice)}",
+                                text = "₹${String.format("%.2f", calculatedTotalPrice)}",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = AmberAccent

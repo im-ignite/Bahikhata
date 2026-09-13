@@ -173,6 +173,25 @@ class TradeRepository(
         }
     }
 
+    suspend fun updateSale(sale: SaleTransaction) = withContext(Dispatchers.IO) {
+        val calculatedTotal = sale.weightKg * sale.pricePerKg
+        val updatedSale = sale.copy(
+            totalPrice = calculatedTotal,
+            isSynced = false
+        )
+        saleDao.updateSale(updatedSale)
+        if (_googleAccount.value.autoSyncEnabled) {
+            triggerCloudSync(false)
+        }
+    }
+
+    suspend fun deleteSale(sale: SaleTransaction) = withContext(Dispatchers.IO) {
+        saleDao.deleteSale(sale)
+        if (_googleAccount.value.autoSyncEnabled) {
+            triggerCloudSync(false)
+        }
+    }
+
     // Google Account Linking
     fun linkGoogleAccount(email: String, displayName: String) {
         _googleAccount.value = _googleAccount.value.copy(
@@ -251,7 +270,7 @@ class TradeRepository(
 
         // 2. Sales Transactions
         sb.append("--- SALES & CUSTOMER TRANSACTIONS ---\n")
-        sb.append("Sale ID,Date,Customer Name,Item Name,Pieces,Weight (kg),Price per kg ($),Total Amount ($),Sync Status\n")
+        sb.append("Sale ID,Date,Customer Name,Item Name,Pieces,Weight (kg),Price per kg (₹),Total Amount (₹),Sync Status\n")
         sales.forEach { s ->
             sb.append("${s.id},\"${s.dateString}\",\"${s.customerName.replace("\"", "\"\"")}\",\"${s.itemName.replace("\"", "\"\"")}\",${s.pieces},${s.weightKg},${s.pricePerKg},${s.totalPrice},${if (s.isSynced) "YES" else "PENDING"}\n")
         }
@@ -259,7 +278,7 @@ class TradeRepository(
 
         // 3. Products Catalog & Price basis
         sb.append("--- PRODUCTS CATALOG (MAIN PROFILE) ---\n")
-        sb.append("Product ID,Item Name,Category,Price Basis ($/kg),Stock Pieces,Stock Weight (kg)\n")
+        sb.append("Product ID,Item Name,Category,Price Basis (₹/kg),Stock Pieces,Stock Weight (kg)\n")
         products.forEach { p ->
             sb.append("${p.id},\"${p.name.replace("\"", "\"\"")}\",\"${p.category}\",${p.pricePerKg},${p.stockPieces},${p.stockWeightKg}\n")
         }

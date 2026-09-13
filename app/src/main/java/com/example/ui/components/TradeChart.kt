@@ -101,7 +101,7 @@ fun WeightAndSalesTrendChart(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Sales ($)",
+                        text = "Sales (₹)",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
