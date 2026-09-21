@@ -258,9 +258,9 @@ class TradeViewModel(
         }
     }
 
-    fun signInWithCredentialManager(webClientId: String? = null, onResult: ((Boolean, String?) -> Unit)? = null) {
+    fun signInWithCredentialManager(activityContext: Context, webClientId: String? = null, onResult: ((Boolean, String?) -> Unit)? = null) {
         viewModelScope.launch {
-            val res = repository.signInWithCredentialManager(webClientId)
+            val res = repository.signInWithCredentialManager(activityContext, webClientId)
             res.onSuccess {
                 onResult?.invoke(true, null)
             }.onFailure { err ->

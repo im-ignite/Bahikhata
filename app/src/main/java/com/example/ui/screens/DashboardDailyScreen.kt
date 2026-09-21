@@ -82,8 +82,8 @@ import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
 import com.example.data.model.SyncStatus
 import com.example.ui.components.EditSaleDialog
-import com.example.ui.components.GoogleDriveSyncCard
-import com.example.ui.components.LinkGoogleAccountDialog
+
+
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.DangerRed
@@ -101,9 +101,6 @@ fun DashboardDailyScreen(
     sales: List<SaleTransaction>,
     customers: List<Customer>,
     products: List<ProductItem>,
-    accountInfo: GoogleAccountInfo,
-    syncStatus: SyncStatus,
-    lastSyncLog: String,
     onRecordSale: (
         customerId: Long?,
         customerName: String,
@@ -117,11 +114,6 @@ fun DashboardDailyScreen(
     onUpdateSale: (SaleTransaction) -> Unit,
     onDeleteSale: (SaleTransaction) -> Unit,
     onAddCustomer: (name: String, phone: String, address: String, notes: String) -> Unit,
-    onSyncNow: () -> Unit,
-    onToggleAutoSync: (Boolean) -> Unit,
-    onExportCsv: () -> Unit,
-    onLinkAccount: (email: String, name: String) -> Unit,
-    onUnlinkAccount: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
@@ -133,7 +125,7 @@ fun DashboardDailyScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showRecordSaleDialog by remember { mutableStateOf(false) }
     var showDatePickerDialog by remember { mutableStateOf(false) }
-    var showLinkDialog by remember { mutableStateOf(false) }
+    
     var editingSale by remember { mutableStateOf<SaleTransaction?>(null) }
     var saleToDelete by remember { mutableStateOf<SaleTransaction?>(null) }
 
@@ -177,18 +169,7 @@ fun DashboardDailyScreen(
             contentPadding = PaddingValues(top = 12.dp, bottom = 88.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // 1. Google Drive Cloud Sync Card
-            item {
-                GoogleDriveSyncCard(
-                    accountInfo = accountInfo,
-                    syncStatus = syncStatus,
-                    lastSyncLog = lastSyncLog,
-                    onSyncNow = onSyncNow,
-                    onToggleAutoSync = onToggleAutoSync,
-                    onExportCsv = onExportCsv,
-                    onLinkAccountClick = { showLinkDialog = true }
-                )
-            }
+            // Google Drive Cloud Sync Card removed from front page per request
 
             // 2. Date Navigation & Picker Bar
             item {
@@ -869,22 +850,7 @@ fun DashboardDailyScreen(
         )
     }
 
-    // Dialog: Link Google Drive Account
-    if (showLinkDialog) {
-        LinkGoogleAccountDialog(
-            currentEmail = accountInfo.email,
-            currentName = accountInfo.displayName,
-            onDismiss = { showLinkDialog = false },
-            onConfirm = { email, name ->
-                onLinkAccount(email, name)
-                showLinkDialog = false
-            },
-            onUnlink = {
-                onUnlinkAccount()
-                showLinkDialog = false
-            }
-        )
-    }
+    // Removed Link Dialog
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -15,10 +15,13 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.example.data.model.GoogleAccountInfo
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 class GoogleAuthManager(private val context: Context) {
@@ -32,10 +35,11 @@ class GoogleAuthManager(private val context: Context) {
     val accountInfo: StateFlow<GoogleAccountInfo> = _accountInfo.asStateFlow()
 
     private fun loadSavedAccount(): GoogleAccountInfo {
-        val email = prefs.getString("google_email", "") ?: ""
-        val displayName = prefs.getString("google_display_name", "") ?: ""
-        val photoUrl = prefs.getString("google_photo_url", "") ?: ""
-        val isLinked = prefs.getBoolean("google_is_linked", false)
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val email = currentUser?.email ?: prefs.getString("google_email", "") ?: ""
+        val displayName = currentUser?.displayName ?: prefs.getString("google_display_name", "") ?: ""
+        val photoUrl = currentUser?.photoUrl?.toString() ?: prefs.getString("google_photo_url", "") ?: ""
+        val isLinked = currentUser != null
         val autoSync = prefs.getBoolean("google_auto_sync", true)
         val lastSync = prefs.getLong("google_last_sync", 0L)
         val syncedCount = prefs.getInt("google_synced_count", 0)
@@ -104,7 +108,7 @@ class GoogleAuthManager(private val context: Context) {
         const val DEFAULT_WEB_CLIENT_ID = "909277075039-685imdini3hbrvs7t0p607ivurq95lhj.apps.googleusercontent.com"
     }
 
-    suspend fun signInWithCredentialManager(webClientId: String? = null): Result<GoogleAccountInfo> =
+    suspend fun signInWithCredentialManager(activityContext: Context, webClientId: String? = null): Result<GoogleAccountInfo> =
         withContext(Dispatchers.IO) {
             try {
                 val clientId = if (!webClientId.isNullOrBlank()) webClientId else DEFAULT_WEB_CLIENT_ID
@@ -121,7 +125,7 @@ class GoogleAuthManager(private val context: Context) {
 
                 val response = credentialManager.getCredential(
                     request = request,
-                    context = context
+                    context = activityContext
                 )
 
                 val credential = response.credential
@@ -131,9 +135,14 @@ class GoogleAuthManager(private val context: Context) {
                     val googleIdTokenCredential =
                         GoogleIdTokenCredential.createFrom(credential.data)
 
-                    val email = googleIdTokenCredential.id
-                    val displayName = googleIdTokenCredential.displayName ?: formatDisplayName(email)
-                    val photoUrl = googleIdTokenCredential.profilePictureUri?.toString() ?: ""
+                    // Authenticate with Firebase using the Google ID token
+                    val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+                    val authResult = FirebaseAuth.getInstance().signInWithCredential(firebaseCredential).await()
+                    val firebaseUser = authResult.user
+
+                    val email = firebaseUser?.email ?: googleIdTokenCredential.id
+                    val displayName = firebaseUser?.displayName ?: googleIdTokenCredential.displayName ?: formatDisplayName(email)
+                    val photoUrl = firebaseUser?.photoUrl?.toString() ?: googleIdTokenCredential.profilePictureUri?.toString() ?: ""
 
                     val accountInfo = GoogleAccountInfo(
                         email = email,
@@ -189,6 +198,7 @@ class GoogleAuthManager(private val context: Context) {
     }
 
     fun signOut() {
+        FirebaseAuth.getInstance().signOut()
         prefs.edit().clear().apply()
         _accountInfo.value = GoogleAccountInfo(isLinked = false)
     }

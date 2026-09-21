@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Settings
+
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,20 +56,38 @@ import com.example.ui.theme.DangerRed
 import com.example.ui.theme.TealPrimary
 import com.example.ui.util.AppLanguage
 import com.example.ui.util.AppStrings
+import androidx.compose.ui.draw.scale
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.rememberScrollState
+
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.graphics.Brush
 
 import com.example.data.model.GoogleAccountInfo
+import com.example.data.model.SyncStatus
 import com.example.ui.theme.SuccessGreen
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SettingsDialog(
     currentLanguage: AppLanguage,
     strings: AppStrings,
     googleAccount: GoogleAccountInfo = GoogleAccountInfo(),
-    isCloudConfigured: Boolean = false,
+    
+    syncStatus: SyncStatus = SyncStatus.IDLE,
     onOpenGoogleSignIn: () -> Unit = {},
-    onOpenGoogleProfile: () -> Unit = {},
-    onExportBackup: () -> Unit = {},
-    onRestoreBackup: () -> Unit = {},
+    onToggleAutoSync: (Boolean) -> Unit = {},
+    onSyncNow: () -> Unit = {},
+    onExportCsv: () -> Unit = {},
+    onSwitchAccount: () -> Unit = {},
     onLanguageSelected: (AppLanguage) -> Unit,
     onClearAllData: () -> Unit = {},
     onDismiss: () -> Unit
@@ -111,7 +131,9 @@ fun SettingsDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Language Selection Header
@@ -197,120 +219,164 @@ fun SettingsDialog(
                 }
 
                 // Google Account and Cloud Sync Card
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            if (googleAccount.isLinked) {
-                                onOpenGoogleProfile()
-                            } else {
-                                onOpenGoogleSignIn()
-                            }
-                        }
-                        .testTag("settings_google_account_card"),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (googleAccount.isLinked) TealPrimary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                if (googleAccount.isLinked) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
                     ) {
-                        GoogleLogoIcon(sizeDp = 28)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (googleAccount.isLinked) (googleAccount.displayName.ifBlank { googleAccount.email }) else strings.googleSignInTitle,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = if (googleAccount.isLinked) TealPrimary else MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (googleAccount.isLinked) {
-                                    if (isCloudConfigured) "${googleAccount.email} • Cloud Active" else "${googleAccount.email} • Local (Cloud setup needed)"
-                                } else strings.googleSignInExplanation,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(
-                                    if (googleAccount.isLinked) {
-                                        if (isCloudConfigured) SuccessGreen else AmberAccent
-                                    } else Color.Gray,
-                                    CircleShape
-                                )
-                        )
-                    }
-                }
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            // Top row
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Icon
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Brush.linearGradient(listOf(Color(0xFF00C6FF), Color(0xFF0072FF))), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.CloudSync, contentDescription = null, tint = Color.White)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Google Drive Sync", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Box(modifier = Modifier.size(8.dp).background(SuccessGreen, CircleShape))
+                                    }
+                                    Text(googleAccount.email, color = Color.LightGray, fontSize = 12.sp)
+                                }
+                                OutlinedButton(
+                                    onClick = onSwitchAccount,
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, TealPrimary),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.Link, contentDescription = null, tint = TealPrimary, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Switch", color = TealPrimary, fontSize = 12.sp)
+                                }
+                            }
 
-                // Backup & Restore Card (Works offline & with Google Drive)
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CloudSync,
-                                contentDescription = null,
-                                tint = TealPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Backup & Data Restore",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Middle block (Cloud folder info)
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF334155)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("Cloud Folder: Google Cloud / RaiFish_Backups", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        val dateStr = if (googleAccount.lastSyncTimestamp > 0) {
+                                            SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(
+                                                Date(googleAccount.lastSyncTimestamp)
+                                            )
+                                        } else "Never"
+                                        Text("Last Synced: $dateStr", color = Color.LightGray, fontSize = 11.sp)
+                                    }
+                                    Icon(Icons.Default.CloudDone, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(24.dp))
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Bottom block
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Switch(
+                                    checked = googleAccount.autoSyncEnabled,
+                                    onCheckedChange = onToggleAutoSync,
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = TealPrimary
+                                    ),
+                                    modifier = Modifier.scale(0.8f)
+                                )
+                                Text("Real-time Sync", color = Color.White, fontSize = 12.sp)
+
+                                Spacer(modifier = Modifier.weight(1f))
+
+                                OutlinedButton(
+                                    onClick = onExportCsv,
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, Color.Gray),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.Download, contentDescription = null, tint = TealPrimary, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("CSV", color = TealPrimary, fontSize = 12.sp)
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Button(
+                                    onClick = onSyncNow,
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                    enabled = syncStatus != SyncStatus.SYNCING
+                                ) {
+                                    if (syncStatus == SyncStatus.SYNCING) {
+                                        CircularProgressIndicator(modifier = Modifier.size(14.dp), color = Color.White, strokeWidth = 2.dp)
+                                    } else {
+                                        Icon(Icons.Default.Sync, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Sync", color = Color.White, fontSize = 12.sp)
+                                }
+                            }
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Save full backup to Google Drive / phone storage to restore your data anytime, even after reinstalling the app.",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                } else {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onOpenGoogleSignIn() }
+                            .testTag("settings_google_account_card"),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                    ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedButton(
-                                onClick = onExportBackup,
+                            Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("settings_export_backup_btn"),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                    .size(28.dp)
+                                    .background(Brush.linearGradient(listOf(Color(0xFF00C6FF), Color(0xFF0072FF))), CircleShape),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Export Backup", fontSize = 11.sp)
+                                Icon(Icons.Default.CloudSync, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                             }
-                            OutlinedButton(
-                                onClick = onRestoreBackup,
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = strings.googleSignInTitle,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = strings.googleSignInExplanation,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .testTag("settings_restore_backup_btn"),
-                                shape = RoundedCornerShape(8.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
-                            ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Restore Backup", fontSize = 11.sp)
-                            }
+                                    .size(8.dp)
+                                    .background(Color.Gray, CircleShape)
+                            )
                         }
                     }
                 }

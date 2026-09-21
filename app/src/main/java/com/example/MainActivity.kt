@@ -90,7 +90,7 @@ import com.example.data.repository.TradeRepository
 import com.example.notification.NotificationHelper
 import com.example.ui.components.GoogleAccountProfileDialog
 import com.example.ui.components.GoogleLogoIcon
-import com.example.ui.components.GoogleSignInPromptDialog
+
 import com.example.ui.components.SettingsDialog
 import com.example.ui.screens.CatalogScreen
 import com.example.ui.screens.CustomersScreen
@@ -160,20 +160,31 @@ fun MainAppScreen(
     val reportMetrics by viewModel.reportMetrics.collectAsStateWithLifecycle()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
-    var showGoogleSignInPrompt by remember { mutableStateOf(false) }
     var showGoogleProfileDialog by remember { mutableStateOf(false) }
     var hasAutoPromptedLogin by rememberSaveable { mutableStateOf(false) }
+    
+
+    val strings = remember(uiState.language) { AppStrings(uiState.language) }
+
+    fun doGoogleSignIn() {
+        viewModel.signInWithCredentialManager(context) { success, errorMsg ->
+            if (success) {
+                val msg = if (strings.isHindi) "Google खाता सिंक हो गया" else "Signed in with Google. Syncing cloud data..."
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(context, "Sign in failed: ${errorMsg ?: "Unknown Error"}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // Prompt user to sign in with Google on startup like major apps
     LaunchedEffect(googleAccount.isLinked) {
         if (!googleAccount.isLinked && !hasAutoPromptedLogin) {
             hasAutoPromptedLogin = true
             kotlinx.coroutines.delay(600)
-            showGoogleSignInPrompt = true
+            doGoogleSignIn()
         }
     }
-
-    val strings = remember(uiState.language) { AppStrings(uiState.language) }
 
     // Notification permission request for Android 13+
     var hasNotifPermission by remember {
@@ -215,7 +226,7 @@ fun MainAppScreen(
             if (devAccounts.isNotEmpty()) {
                 viewModel.signInWithGoogleAccount(devAccounts.first())
             } else {
-                showGoogleSignInPrompt = true
+                doGoogleSignIn()
             }
         }
     }
@@ -252,7 +263,7 @@ fun MainAppScreen(
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     } else {
-                                        showGoogleSignInPrompt = true
+                                        doGoogleSignIn()
                                     }
                                 }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -331,7 +342,7 @@ fun MainAppScreen(
                         }
                     } else {
                         Button(
-                            onClick = { showGoogleSignInPrompt = true },
+                            onClick = { doGoogleSignIn() },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                 contentColor = MaterialTheme.colorScheme.onSurface
@@ -464,9 +475,6 @@ fun MainAppScreen(
                         sales = sales,
                         customers = customers,
                         products = products,
-                        accountInfo = googleAccount,
-                        syncStatus = syncStatus,
-                        lastSyncLog = lastSyncLog,
                         onRecordSale = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, date ->
                             viewModel.recordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, date)
                             Toast.makeText(context, "Fish sale recorded & queued for Drive sync", Toast.LENGTH_SHORT).show()
@@ -481,22 +489,6 @@ fun MainAppScreen(
                         },
                         onAddCustomer = { name, phone, address, notes ->
                             viewModel.addCustomer(name, phone, address, notes)
-                        },
-                        onSyncNow = { viewModel.triggerCloudSync() },
-                        onToggleAutoSync = { viewModel.toggleAutoSync(it) },
-                        onExportCsv = {
-                            val success = viewModel.exportCsvForGoogleDrive(context)
-                            if (!success) {
-                                Toast.makeText(context, "Failed to prepare CSV for export", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        onLinkAccount = { email, name ->
-                            viewModel.linkGoogleAccount(email, name)
-                            Toast.makeText(context, "Linked Google Account: $email", Toast.LENGTH_SHORT).show()
-                        },
-                        onUnlinkAccount = {
-                            viewModel.unlinkGoogleAccount()
-                            Toast.makeText(context, "Unlinked Google Account", Toast.LENGTH_SHORT).show()
                         }
                     )
 
@@ -571,20 +563,7 @@ fun MainAppScreen(
         }
     }
 
-    if (showGoogleSignInPrompt) {
-        GoogleSignInPromptDialog(
-            strings = strings,
-            onSignInSuccess = { email, name ->
-                viewModel.signInWithGoogleAccount(email, name)
-                val msg = if (strings.isHindi) "Google खाता $email सिंक हो गया" else "Signed in with $email. Syncing cloud data..."
-                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                showGoogleSignInPrompt = false
-            },
-            onDismiss = { showGoogleSignInPrompt = false },
-            createAccountPickerIntent = { viewModel.createSystemAccountPickerIntent() },
-            deviceAccounts = viewModel.getDeviceGoogleAccounts()
-        )
-    }
+    // The CredentialManager now handles the Sign-In UI natively.
 
     if (showGoogleProfileDialog) {
         GoogleAccountProfileDialog(
@@ -592,7 +571,7 @@ fun MainAppScreen(
             syncStatus = syncStatus,
             lastSyncLog = lastSyncLog,
             strings = strings,
-            isCloudConfigured = viewModel.isCloudConfigured(),
+            
             onSyncNow = {
                 viewModel.triggerCloudSync()
                 Toast.makeText(
@@ -618,7 +597,7 @@ fun MainAppScreen(
                 }
             },
             onSwitchAccount = {
-                showGoogleSignInPrompt = true
+                doGoogleSignIn()
             },
             onSignOut = {
                 viewModel.signOutGoogleAccount()
@@ -633,27 +612,28 @@ fun MainAppScreen(
             currentLanguage = uiState.language,
             strings = strings,
             googleAccount = googleAccount,
-            isCloudConfigured = viewModel.isCloudConfigured(),
+            
+            syncStatus = syncStatus,
             onOpenGoogleSignIn = {
                 showSettingsDialog = false
-                showGoogleSignInPrompt = true
+                doGoogleSignIn()
             },
-            onOpenGoogleProfile = {
-                showSettingsDialog = false
-                showGoogleProfileDialog = true
+            onToggleAutoSync = { enabled ->
+                viewModel.toggleAutoSync(enabled)
             },
-            onExportBackup = {
-                val success = viewModel.exportBackupFile(context)
+            onSyncNow = {
+                viewModel.triggerCloudSync()
+                Toast.makeText(context, "Syncing with Google Cloud...", Toast.LENGTH_SHORT).show()
+            },
+            onExportCsv = {
+                val success = viewModel.exportCsvForGoogleDrive(context)
                 if (!success) {
-                    Toast.makeText(context, "Failed to export backup", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Failed to prepare CSV for export", Toast.LENGTH_SHORT).show()
                 }
             },
-            onRestoreBackup = {
-                try {
-                    restoreBackupLauncher.launch(arrayOf("application/json", "*/*"))
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Could not launch file picker", Toast.LENGTH_SHORT).show()
-                }
+            onSwitchAccount = {
+                showSettingsDialog = false
+                doGoogleSignIn()
             },
             onLanguageSelected = { newLang ->
                 viewModel.setLanguage(newLang)

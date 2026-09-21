@@ -299,8 +299,8 @@ class TradeRepository(
         triggerCloudSync(notifyUser = false)
     }
 
-    suspend fun signInWithCredentialManager(webClientId: String? = null): Result<GoogleAccountInfo> = withContext(Dispatchers.IO) {
-        val res = authManager.signInWithCredentialManager(webClientId)
+    suspend fun signInWithCredentialManager(activityContext: Context, webClientId: String? = null): Result<GoogleAccountInfo> = withContext(Dispatchers.IO) {
+        val res = authManager.signInWithCredentialManager(activityContext, webClientId)
         res.onSuccess { info ->
             saleDao.deleteAllSales()
             batchDao.deleteAllBatches()
