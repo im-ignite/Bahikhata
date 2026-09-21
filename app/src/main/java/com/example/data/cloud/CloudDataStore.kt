@@ -339,12 +339,20 @@ class CloudDataStore(private val context: Context) {
                     } catch (e: Exception) { null }
                 }
 
-                if (products.isNotEmpty() || customers.isNotEmpty() || sales.isNotEmpty()) {
+                if (products.isNotEmpty() || customers.isNotEmpty() || sales.isNotEmpty() || batches.isNotEmpty()) {
                     return@withContext CloudSyncPayload(
                         products = products,
                         customers = customers,
                         batches = batches,
                         sales = sales,
+                        timestamp = System.currentTimeMillis()
+                    )
+                } else {
+                    return@withContext CloudSyncPayload(
+                        products = emptyList(),
+                        customers = emptyList(),
+                        batches = emptyList(),
+                        sales = emptyList(),
                         timestamp = System.currentTimeMillis()
                     )
                 }
@@ -353,110 +361,7 @@ class CloudDataStore(private val context: Context) {
             }
         }
 
-        // 2. Read from persistent cloud snapshot file
-        try {
-            val file = getCloudBackupFile(email)
-            if (!file.exists()) return@withContext null
-
-            val text = file.readText()
-            if (text.isBlank()) return@withContext null
-
-            val root = JSONObject(text)
-            val timestamp = root.optLong("timestamp", System.currentTimeMillis())
-
-            val productsList = mutableListOf<ProductItem>()
-            val prodArray = root.optJSONArray("products")
-            if (prodArray != null) {
-                for (i in 0 until prodArray.length()) {
-                    val obj = prodArray.getJSONObject(i)
-                    productsList.add(
-                        ProductItem(
-                            id = obj.optLong("id", 0L),
-                            name = obj.optString("name", ""),
-                            pricePerKg = obj.optDouble("pricePerKg", 0.0),
-                            stockPieces = obj.optInt("stockPieces", 0),
-                            stockWeightKg = obj.optDouble("stockWeightKg", 0.0),
-                            unit = obj.optString("unit", "kg"),
-                            category = obj.optString("category", "General"),
-                            lastUpdated = obj.optLong("lastUpdated", System.currentTimeMillis())
-                        )
-                    )
-                }
-            }
-
-            val customersList = mutableListOf<Customer>()
-            val custArray = root.optJSONArray("customers")
-            if (custArray != null) {
-                for (i in 0 until custArray.length()) {
-                    val obj = custArray.getJSONObject(i)
-                    customersList.add(
-                        Customer(
-                            id = obj.optLong("id", 0L),
-                            name = obj.optString("name", ""),
-                            phoneNumber = obj.optString("phoneNumber", ""),
-                            address = obj.optString("address", ""),
-                            notes = obj.optString("notes", ""),
-                            createdAt = obj.optLong("createdAt", System.currentTimeMillis())
-                        )
-                    )
-                }
-            }
-
-            val batchesList = mutableListOf<DailyBatchEntry>()
-            val batchArray = root.optJSONArray("batches")
-            if (batchArray != null) {
-                for (i in 0 until batchArray.length()) {
-                    val obj = batchArray.getJSONObject(i)
-                    batchesList.add(
-                        DailyBatchEntry(
-                            id = obj.optLong("id", 0L),
-                            dateString = obj.optString("dateString", ""),
-                            timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
-                            name = obj.optString("name", ""),
-                            pieces = obj.optInt("pieces", 0),
-                            weightKg = obj.optDouble("weightKg", 0.0),
-                            notes = obj.optString("notes", ""),
-                            isSynced = true
-                        )
-                    )
-                }
-            }
-
-            val salesList = mutableListOf<SaleTransaction>()
-            val salesArray = root.optJSONArray("sales")
-            if (salesArray != null) {
-                for (i in 0 until salesArray.length()) {
-                    val obj = salesArray.getJSONObject(i)
-                    salesList.add(
-                        SaleTransaction(
-                            id = obj.optLong("id", 0L),
-                            customerId = if (obj.has("customerId") && obj.getLong("customerId") > 0) obj.getLong("customerId") else null,
-                            customerName = obj.optString("customerName", ""),
-                            productId = if (obj.has("productId") && obj.getLong("productId") > 0) obj.getLong("productId") else null,
-                            itemName = obj.optString("itemName", ""),
-                            pieces = obj.optInt("pieces", 0),
-                            weightKg = obj.optDouble("weightKg", 0.0),
-                            pricePerKg = obj.optDouble("pricePerKg", 0.0),
-                            totalPrice = obj.optDouble("totalPrice", 0.0),
-                            dateString = obj.optString("dateString", ""),
-                            timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
-                            isSynced = true
-                        )
-                    )
-                }
-            }
-
-            return@withContext CloudSyncPayload(
-                products = productsList,
-                customers = customersList,
-                batches = batchesList,
-                sales = salesList,
-                timestamp = timestamp
-            )
-        } catch (e: Exception) {
-            Log.e(tag, "Failed to read cloud sync snapshot", e)
-            return@withContext null
-        }
+        return@withContext null
     }
 
     fun serializePayloadToJson(
