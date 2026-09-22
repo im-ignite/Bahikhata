@@ -425,8 +425,8 @@ fun MainAppScreen(
                         sales = sales,
                         customers = customers,
                         products = products,
-                        onRecordSale = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, date ->
-                            viewModel.recordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, date)
+                        onRecordSale = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, amountPaid, date ->
+                            viewModel.recordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, amountPaid, date)
                             Toast.makeText(context, "Fish sale recorded & queued for Drive sync", Toast.LENGTH_SHORT).show()
                         },
                         onUpdateSale = { updated ->
@@ -446,8 +446,8 @@ fun MainAppScreen(
                         sales = sales,
                         products = products,
                         customers = customers,
-                        onRecordSale = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, date ->
-                            viewModel.recordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, date)
+                        onRecordSale = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, amountPaid, date ->
+                            viewModel.recordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, amountPaid, date)
                             Toast.makeText(context, "Sale recorded! Inventory automatically deducted.", Toast.LENGTH_SHORT).show()
                         },
                         onAddCustomer = { name, phone, address, notes ->

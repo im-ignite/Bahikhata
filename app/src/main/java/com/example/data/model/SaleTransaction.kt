@@ -16,6 +16,7 @@ data class SaleTransaction(
     val pricePerKg: Double, // Price basis
     val totalPrice: Double, // Calculated: weightKg * pricePerKg
     val dateString: String, // YYYY-MM-DD
+    val amountPaid: Double = 0.0,
     val timestamp: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false
 )

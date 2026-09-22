@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.Customer
 import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
+import androidx.compose.material3.Surface
 import com.example.ui.components.EditSaleDialog
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
@@ -91,6 +92,7 @@ fun SalesScreen(
         pieces: Int,
         weightKg: Double,
         pricePerKg: Double,
+        amountPaid: Double,
         dateString: String
     ) -> Unit,
     onAddCustomer: (name: String, phone: String, address: String, notes: String) -> Unit,
@@ -324,8 +326,8 @@ fun SalesScreen(
             products = products,
             customers = customers,
             onDismiss = { showRecordSaleDialog = false },
-            onConfirm = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, date ->
-                onRecordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, date)
+            onConfirm = { custId, custName, prodId, itemName, pcs, wt, pricePerKg, amountPaid, date ->
+                onRecordSale(custId, custName, prodId, itemName, pcs, wt, pricePerKg, amountPaid, date)
                 showRecordSaleDialog = false
             },
             onAddCustomer = onAddCustomer
@@ -468,6 +470,8 @@ fun SaleTransactionCard(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
+            PaymentStatusBadge(amountPaid = sale.amountPaid, totalPrice = sale.totalPrice)
+            Spacer(modifier = Modifier.height(6.dp))
 
             // Item and weight metrics + Edit/Delete actions
             Row(
@@ -551,6 +555,31 @@ fun SaleTransactionCard(
     }
 }
 
+@Composable
+fun PaymentStatusBadge(amountPaid: Double, totalPrice: Double) {
+    val dueAmount = totalPrice - amountPaid
+
+    val (backgroundColor, textColor, text) = when {
+        amountPaid >= totalPrice -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "Paid / पूरा भुगतान")
+        amountPaid > 0 -> Triple(Color(0xFFFFF3E0), Color(0xFFEF6C00), "Partial / आंशिक: ₹$amountPaid, Due: ₹${"%.2f".format(dueAmount)}")
+        else -> Triple(Color(0xFFFFEBEE), Color(0xFFC62828), "Unpaid / बाकी: ₹${"%.2f".format(dueAmount)}")
+    }
+
+    Surface(
+        color = backgroundColor,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.padding(top = 4.dp)
+    ) {
+        Text(
+            text = text,
+            color = textColor,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordSaleDialog(
@@ -565,6 +594,7 @@ fun RecordSaleDialog(
         pieces: Int,
         weight: Double,
         pricePerKg: Double,
+        amountPaid: Double,
         date: String
     ) -> Unit,
     onAddCustomer: (name: String, phone: String, address: String, notes: String) -> Unit
@@ -855,6 +885,7 @@ fun RecordSaleDialog(
 
                     val prodName = selectedProduct?.name ?: manualItemName.ifEmpty { "General Commodity" }
                     val prodId = selectedProduct?.id
+                    val amountPaid = 0.0 // amountPaidText was not defined in this dialog scope in SalesScreen
 
                     onConfirm(
                         custId,
@@ -864,6 +895,7 @@ fun RecordSaleDialog(
                         inputPieces,
                         inputWeight,
                         activePricePerKg,
+                        amountPaid,
                         dateString
                     )
                 },

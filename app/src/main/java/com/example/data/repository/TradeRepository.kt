@@ -211,6 +211,7 @@ class TradeRepository(
         pieces: Int,
         weightKg: Double,
         pricePerKg: Double,
+        amountPaid: Double,
         dateString: String
     ) = withContext(Dispatchers.IO) {
         val totalPrice = weightKg * pricePerKg // Strictly weight-based calculation
@@ -224,6 +225,7 @@ class TradeRepository(
             pricePerKg = pricePerKg,
             totalPrice = totalPrice,
             dateString = dateString,
+            amountPaid = amountPaid,
             isSynced = true
         )
         val id = saleDao.insertSale(sale)

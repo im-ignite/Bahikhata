@@ -205,6 +205,7 @@ class TradeViewModel(
         pieces: Int,
         weightKg: Double,
         pricePerKg: Double,
+        amountPaid: Double,
         dateString: String
     ) {
         viewModelScope.launch {
@@ -216,6 +217,7 @@ class TradeViewModel(
                 pieces = pieces,
                 weightKg = weightKg,
                 pricePerKg = pricePerKg,
+                amountPaid = amountPaid,
                 dateString = dateString
             )
         }

@@ -473,6 +473,8 @@ fun CustomerItemCard(
                                     }
                                 }
                             }
+                            PaymentStatusBadge(amountPaid = sale.amountPaid, totalPrice = sale.totalPrice)
+                            Spacer(modifier = Modifier.height(4.dp))
                         }
                     }
 

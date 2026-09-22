@@ -128,6 +128,7 @@ class CloudDataStore(private val context: Context) {
                                 "weightKg" to s.weightKg,
                                 "pricePerKg" to s.pricePerKg,
                                 "totalPrice" to s.totalPrice,
+                                "amountPaid" to s.amountPaid,
                                 "dateString" to s.dateString,
                                 "timestamp" to s.timestamp,
                                 "isSynced" to true
@@ -247,6 +248,7 @@ class CloudDataStore(private val context: Context) {
                 obj.put("weightKg", s.weightKg)
                 obj.put("pricePerKg", s.pricePerKg)
                 obj.put("totalPrice", s.totalPrice)
+                obj.put("amountPaid", s.amountPaid)
                 obj.put("dateString", s.dateString)
                 obj.put("timestamp", s.timestamp)
                 salesArray.put(obj)
@@ -332,6 +334,7 @@ class CloudDataStore(private val context: Context) {
                             weightKg = d.getDouble("weightKg") ?: 0.0,
                             pricePerKg = d.getDouble("pricePerKg") ?: 0.0,
                             totalPrice = d.getDouble("totalPrice") ?: 0.0,
+                            amountPaid = d.getDouble("amountPaid") ?: 0.0,
                             dateString = d.getString("dateString") ?: "",
                             timestamp = d.getLong("timestamp") ?: System.currentTimeMillis(),
                             isSynced = true
@@ -518,6 +521,7 @@ class CloudDataStore(private val context: Context) {
                             weightKg = obj.optDouble("weightKg", 0.0),
                             pricePerKg = obj.optDouble("pricePerKg", 0.0),
                             totalPrice = obj.optDouble("totalPrice", 0.0),
+                            amountPaid = obj.optDouble("amountPaid", 0.0),
                             dateString = obj.optString("dateString", ""),
                             timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
                             isSynced = true
@@ -659,6 +663,7 @@ class CloudDataStore(private val context: Context) {
                         "weightKg" to sale.weightKg,
                         "pricePerKg" to sale.pricePerKg,
                         "totalPrice" to sale.totalPrice,
+                        "amountPaid" to sale.amountPaid,
                         "dateString" to sale.dateString,
                         "timestamp" to sale.timestamp,
                         "isSynced" to true

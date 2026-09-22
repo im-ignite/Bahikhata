@@ -144,8 +144,8 @@ class AppStrings(val language: AppLanguage) {
     val drawerContactTitle: String get() = if (isHindi) "संपर्क एवं सहायता" else "Contact & Support"
     val drawerContactSub: String get() = if (isHindi) "मालिक / सहायता नंबर" else "Owner / Helpline"
     val drawerCallNow: String get() = if (isHindi) "कॉल करें" else "Call Now"
-    val drawerContactPhone: String get() = "+91 70046 54067"
-    val drawerSupportEmail: String get() = "raifish.support@gmail.com"
+    val drawerContactPhone: String get() = "+91 9304565995"
+    val drawerSupportEmail: String get() = "abhijeetanand1821@gmail.com"
 
 }
 

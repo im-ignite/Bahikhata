@@ -112,6 +112,7 @@ fun DashboardDailyScreen(
         pieces: Int,
         weightKg: Double,
         pricePerKg: Double,
+        amountPaid: Double,
         dateString: String
     ) -> Unit,
     onUpdateSale: (SaleTransaction) -> Unit,
@@ -570,6 +571,8 @@ fun DashboardDailyScreen(
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))
+                            PaymentStatusBadge(amountPaid = sale.amountPaid, totalPrice = sale.totalPrice)
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             // Fish Details Pill
                             Box(
@@ -713,8 +716,8 @@ fun DashboardDailyScreen(
             products = products,
             customers = customers,
             onDismiss = { showRecordSaleDialog = false },
-            onConfirm = { custId, custName, prodId, itemName, pcs, wt, rate, dateStr ->
-                onRecordSale(custId, custName, prodId, itemName, pcs, wt, rate, dateStr)
+            onConfirm = { custId, custName, prodId, itemName, pcs, wt, rate, amountPaid, dateStr ->
+                onRecordSale(custId, custName, prodId, itemName, pcs, wt, rate, amountPaid, dateStr)
                 showRecordSaleDialog = false
             },
             onAddNewCustomer = onAddCustomer
@@ -814,6 +817,7 @@ fun RecordFishSaleDialog(
         pieces: Int,
         weightKg: Double,
         pricePerKg: Double,
+        amountPaid: Double,
         dateString: String
     ) -> Unit,
     onAddNewCustomer: (name: String, phone: String, address: String, notes: String) -> Unit
@@ -831,6 +835,7 @@ fun RecordFishSaleDialog(
 
     var weightInput by remember { mutableStateOf("") }
     var piecesInput by remember { mutableStateOf("1") }
+    var amountPaidInput by remember { mutableStateOf("") }
     var rateInput by remember {
         mutableStateOf(selectedProduct?.pricePerKg?.toString() ?: "120.0")
     }
@@ -1134,6 +1139,7 @@ fun RecordFishSaleDialog(
                         inputPieces,
                         inputWeight,
                         inputRate,
+                        amountPaidInput.toDoubleOrNull() ?: 0.0,
                         saleDate.trim()
                     )
                 },

@@ -62,6 +62,7 @@ fun EditSaleDialog(
     var piecesText by remember { mutableStateOf(sale.pieces.toString()) }
     var weightText by remember { mutableStateOf(sale.weightKg.toString()) }
     var pricePerKgText by remember { mutableStateOf(sale.pricePerKg.toString()) }
+    var amountPaidText by remember { mutableStateOf(sale.amountPaid.toString()) }
     var dateString by remember { mutableStateOf(sale.dateString) }
 
     var customerDropdownExpanded by remember { mutableStateOf(false) }
@@ -254,6 +255,18 @@ fun EditSaleDialog(
                         .fillMaxWidth()
                         .testTag("edit_sale_date_input")
                 )
+                
+                OutlinedTextField(
+                    value = amountPaidText,
+                    onValueChange = { amountPaidText = it },
+                    label = { Text("Amount Paid (₹) / जमा राशि") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("edit_sale_amount_paid_input")
+                )
 
                 // Live price calculation in Rupees
                 Box(
@@ -297,6 +310,7 @@ fun EditSaleDialog(
                     val pieces = piecesText.toIntOrNull() ?: sale.pieces
                     val weight = weightText.toDoubleOrNull() ?: sale.weightKg
                     val pricePerKg = pricePerKgText.toDoubleOrNull() ?: sale.pricePerKg
+                    val amountPaid = amountPaidText.toDoubleOrNull() ?: sale.amountPaid
 
                     if (customerName.isNotBlank() && itemName.isNotBlank() && weight > 0 && pricePerKg > 0) {
                         val updated = sale.copy(
@@ -307,6 +321,7 @@ fun EditSaleDialog(
                             pieces = pieces,
                             weightKg = weight,
                             pricePerKg = pricePerKg,
+                            amountPaid = amountPaid,
                             totalPrice = weight * pricePerKg,
                             dateString = dateString.trim().ifEmpty { sale.dateString },
                             isSynced = false
