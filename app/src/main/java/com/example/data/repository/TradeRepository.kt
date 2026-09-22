@@ -8,6 +8,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.model.Customer
 import com.example.data.model.DailyBatchEntry
 import com.example.data.model.GoogleAccountInfo
+import com.example.data.model.PaymentTransaction
 import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
 import com.example.data.model.SyncStatus
@@ -34,6 +35,7 @@ class TradeRepository(
     private val productDao = database.productDao()
     private val customerDao = database.customerDao()
     private val saleDao = database.saleDao()
+    private val paymentDao = database.paymentDao()
 
     val authManager = GoogleAuthManager(context)
     val cloudDataStore = CloudDataStore(context)
@@ -75,6 +77,10 @@ class TradeRepository(
 
     fun getSalesForCustomer(customerId: Long): Flow<List<SaleTransaction>> {
         return saleDao.getSalesForCustomer(customerId)
+    }
+
+    fun getPaymentsForCustomer(customerId: Long): Flow<List<PaymentTransaction>> {
+        return paymentDao.getPaymentsForCustomer(customerId)
     }
 
     suspend fun clearAllData() = withContext(Dispatchers.IO) {
@@ -263,6 +269,10 @@ class TradeRepository(
         autoSyncIfEnabled()
     }
 
+    suspend fun addPayment(payment: PaymentTransaction) = withContext(Dispatchers.IO) {
+        paymentDao.insertPayment(payment)
+    }
+
     suspend fun deleteSale(sale: SaleTransaction) = withContext(Dispatchers.IO) {
         saleDao.deleteSale(sale)
         val account = authManager.accountInfo.value
@@ -387,6 +397,7 @@ class TradeRepository(
                 if (cloudPayload.customers.isNotEmpty()) customerDao.insertAll(cloudPayload.customers)
                 if (cloudPayload.batches.isNotEmpty()) batchDao.insertAll(cloudPayload.batches)
                 if (cloudPayload.sales.isNotEmpty()) saleDao.insertAll(cloudPayload.sales)
+                if (cloudPayload.payments.isNotEmpty()) paymentDao.insertAll(cloudPayload.payments)
             }
 
             // 2. Fetch combined local records
@@ -394,6 +405,7 @@ class TradeRepository(
             val currentCustomers = customerDao.getAllCustomersList()
             val currentBatches = batchDao.getAllBatchesList()
             val currentSales = saleDao.getAllSalesList()
+            val currentPayments = paymentDao.getAllPaymentsList()
 
             // 3. Upload combined records to Cloud
             val success = cloudDataStore.uploadToCloud(
@@ -401,14 +413,15 @@ class TradeRepository(
                 products = currentProducts,
                 customers = currentCustomers,
                 batches = currentBatches,
-                sales = currentSales
+                sales = currentSales,
+                payments = currentPayments
             )
 
             val now = System.currentTimeMillis()
             batchDao.markAllAsSynced(now)
             saleDao.markAllAsSynced()
 
-            val totalSynced = currentProducts.size + currentCustomers.size + currentBatches.size + currentSales.size
+            val totalSynced = currentProducts.size + currentCustomers.size + currentBatches.size + currentSales.size + currentPayments.size
             authManager.updateSyncMetadata(now, totalSynced)
 
             _syncStatus.value = SyncStatus.SUCCESS
@@ -485,8 +498,9 @@ class TradeRepository(
         val customers = customerDao.getAllCustomersList()
         val batches = batchDao.getAllBatchesList()
         val sales = saleDao.getAllSalesList()
+        val payments = paymentDao.getAllPaymentsList()
         val email = googleAccount.value.email.ifBlank { "offline_user@raifish.local" }
-        cloudDataStore.serializePayloadToJson(email, products, customers, batches, sales)
+        cloudDataStore.serializePayloadToJson(email, products, customers, batches, sales, payments)
     }
 
     suspend fun importBackupJson(jsonString: String): Boolean = withContext(Dispatchers.IO) {

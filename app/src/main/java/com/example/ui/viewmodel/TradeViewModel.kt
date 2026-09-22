@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.model.Customer
 import com.example.data.model.DailyBatchEntry
 import com.example.data.model.GoogleAccountInfo
+import com.example.data.model.PaymentTransaction
 import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
 import com.example.data.model.SyncStatus
@@ -236,9 +237,17 @@ class TradeViewModel(
         }
     }
 
-    fun registerCustomerPayment(customerId: Long, amount: Double) {
+    fun registerCustomerPayment(customerId: Long, amount: Double, dateString: String) {
         viewModelScope.launch(Dispatchers.IO) {
             if (amount <= 0.0) return@launch
+
+            // 1. Record the payment transaction
+            val payment = PaymentTransaction(
+                customerId = customerId,
+                amountPaid = amount,
+                dateString = dateString
+            )
+            repository.addPayment(payment)
 
             var remainingAmount = amount
             // Fetch all sales for this customer, sorted by oldest first
@@ -265,6 +274,8 @@ class TradeViewModel(
             }
         }
     }
+
+    fun getPaymentsForCustomer(customerId: Long) = repository.getPaymentsForCustomer(customerId)
 
     // Cloud & Google Account Sync
     fun triggerCloudSync() {

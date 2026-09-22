@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.example.data.model.Customer
 import com.example.data.model.DailyBatchEntry
+import com.example.data.model.PaymentTransaction
 import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
 import com.google.firebase.FirebaseApp
@@ -21,6 +22,7 @@ data class CloudSyncPayload(
     val customers: List<Customer> = emptyList(),
     val batches: List<DailyBatchEntry> = emptyList(),
     val sales: List<SaleTransaction> = emptyList(),
+    val payments: List<PaymentTransaction> = emptyList(),
     val timestamp: Long = System.currentTimeMillis()
 )
 
@@ -61,7 +63,8 @@ class CloudDataStore(private val context: Context) {
         products: List<ProductItem>,
         customers: List<Customer>,
         batches: List<DailyBatchEntry>,
-        sales: List<SaleTransaction>
+        sales: List<SaleTransaction>,
+        payments: List<PaymentTransaction>
     ): Boolean = withContext(Dispatchers.IO) {
         if (email.isBlank()) return@withContext false
 
@@ -190,70 +193,8 @@ class CloudDataStore(private val context: Context) {
 
         // 2. Always maintain the full synchronized Cloud Account Snapshot
         try {
-            val root = JSONObject()
-            root.put("account_email", email)
-            root.put("timestamp", System.currentTimeMillis())
-
-            val productsArray = JSONArray()
-            products.forEach { p ->
-                val obj = JSONObject()
-                obj.put("id", p.id)
-                obj.put("name", p.name)
-                obj.put("pricePerKg", p.pricePerKg)
-                obj.put("stockPieces", p.stockPieces)
-                obj.put("stockWeightKg", p.stockWeightKg)
-                obj.put("unit", p.unit)
-                obj.put("category", p.category)
-                obj.put("lastUpdated", p.lastUpdated)
-                productsArray.put(obj)
-            }
-            root.put("products", productsArray)
-
-            val customersArray = JSONArray()
-            customers.forEach { c ->
-                val obj = JSONObject()
-                obj.put("id", c.id)
-                obj.put("name", c.name)
-                obj.put("phoneNumber", c.phoneNumber)
-                obj.put("address", c.address)
-                obj.put("notes", c.notes)
-                obj.put("createdAt", c.createdAt)
-                customersArray.put(obj)
-            }
-            root.put("customers", customersArray)
-
-            val batchesArray = JSONArray()
-            batches.forEach { b ->
-                val obj = JSONObject()
-                obj.put("id", b.id)
-                obj.put("dateString", b.dateString)
-                obj.put("timestamp", b.timestamp)
-                obj.put("name", b.name)
-                obj.put("pieces", b.pieces)
-                obj.put("weightKg", b.weightKg)
-                obj.put("notes", b.notes)
-                batchesArray.put(obj)
-            }
-            root.put("batches", batchesArray)
-
-            val salesArray = JSONArray()
-            sales.forEach { s ->
-                val obj = JSONObject()
-                obj.put("id", s.id)
-                obj.put("customerId", s.customerId ?: -1L)
-                obj.put("customerName", s.customerName)
-                obj.put("productId", s.productId ?: -1L)
-                obj.put("itemName", s.itemName)
-                obj.put("pieces", s.pieces)
-                obj.put("weightKg", s.weightKg)
-                obj.put("pricePerKg", s.pricePerKg)
-                obj.put("totalPrice", s.totalPrice)
-                obj.put("amountPaid", s.amountPaid)
-                obj.put("dateString", s.dateString)
-                obj.put("timestamp", s.timestamp)
-                salesArray.put(obj)
-            }
-            root.put("sales", salesArray)
+            val jsonString = serializePayloadToJson(email, products, customers, batches, sales, payments)
+            val root = JSONObject(jsonString)
 
             val file = getCloudBackupFile(email)
             file.writeText(root.toString(2))
@@ -372,7 +313,8 @@ class CloudDataStore(private val context: Context) {
         products: List<ProductItem>,
         customers: List<Customer>,
         batches: List<DailyBatchEntry>,
-        sales: List<SaleTransaction>
+        sales: List<SaleTransaction>,
+        payments: List<PaymentTransaction>
     ): String {
         val root = JSONObject()
         root.put("account_email", email)
@@ -438,6 +380,18 @@ class CloudDataStore(private val context: Context) {
             salesArray.put(obj)
         }
         root.put("sales", salesArray)
+
+        val paymentsArray = JSONArray()
+        payments.forEach { p ->
+            val obj = JSONObject()
+            obj.put("id", p.id)
+            obj.put("customerId", p.customerId)
+            obj.put("amountPaid", p.amountPaid)
+            obj.put("dateString", p.dateString)
+            obj.put("timestamp", p.timestamp)
+            paymentsArray.put(obj)
+        }
+        root.put("payments", paymentsArray)
 
         return root.toString(2)
     }
@@ -530,11 +484,29 @@ class CloudDataStore(private val context: Context) {
                 }
             }
 
+            val paymentsList = mutableListOf<PaymentTransaction>()
+            val paymentsArray = root.optJSONArray("payments")
+            if (paymentsArray != null) {
+                for (i in 0 until paymentsArray.length()) {
+                    val obj = paymentsArray.getJSONObject(i)
+                    paymentsList.add(
+                        PaymentTransaction(
+                            id = obj.optLong("id", 0L),
+                            customerId = obj.optLong("customerId", 0L),
+                            amountPaid = obj.optDouble("amountPaid", 0.0),
+                            dateString = obj.optString("dateString", ""),
+                            timestamp = obj.optLong("timestamp", System.currentTimeMillis())
+                        )
+                    )
+                }
+            }
+
             CloudSyncPayload(
                 products = productsList,
                 customers = customersList,
                 batches = batchesList,
                 sales = salesList,
+                payments = paymentsList,
                 timestamp = timestamp
             )
         } catch (e: Exception) {

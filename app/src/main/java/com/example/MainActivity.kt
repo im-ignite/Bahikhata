@@ -507,9 +507,12 @@ fun MainAppScreen(
                             Toast.makeText(context, "Sale record updated", Toast.LENGTH_SHORT).show()
                         },
                         onNavigateToSales = { viewModel.setActiveTab(1) },
-                        onAddPayment = { customerId, amount ->
-                            viewModel.registerCustomerPayment(customerId, amount)
+                        onAddPayment = { customerId, amount, dateString ->
+                            viewModel.registerCustomerPayment(customerId, amount, dateString)
                             Toast.makeText(context, "Payment of ₹$amount recorded", Toast.LENGTH_SHORT).show()
+                        },
+                        getPaymentsForCustomer = { customerId ->
+                            viewModel.getPaymentsForCustomer(customerId)
                         }
                     )
                 }

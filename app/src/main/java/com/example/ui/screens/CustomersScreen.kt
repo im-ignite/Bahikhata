@@ -47,6 +47,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,11 +63,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Customer
+import com.example.data.model.PaymentTransaction
 import com.example.data.model.SaleTransaction
 import com.example.ui.components.EditSaleDialog
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.TealPrimary
+import kotlinx.coroutines.flow.Flow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun CustomersScreen(
@@ -76,7 +82,8 @@ fun CustomersScreen(
     onDeleteCustomer: (Customer) -> Unit = {},
     onUpdateSale: (SaleTransaction) -> Unit = {},
     onNavigateToSales: () -> Unit,
-    onAddPayment: (Long, Double) -> Unit,
+    onAddPayment: (Long, Double, String) -> Unit,
+    getPaymentsForCustomer: (Long) -> Flow<List<PaymentTransaction>>,
     modifier: Modifier = Modifier
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
@@ -146,7 +153,8 @@ fun CustomersScreen(
                     onNewSale = onNavigateToSales,
                     onDelete = { customerToDelete = customer },
                     onEditSale = { saleToEdit = it },
-                    onAddPayment = onAddPayment
+                    onAddPayment = onAddPayment,
+                    getPaymentsForCustomer = getPaymentsForCustomer
                 )
             }
         }
@@ -244,10 +252,12 @@ fun CustomerItemCard(
     onNewSale: () -> Unit,
     onDelete: () -> Unit = {},
     onEditSale: (SaleTransaction) -> Unit = {},
-    onAddPayment: (Long, Double) -> Unit,
+    onAddPayment: (Long, Double, String) -> Unit,
+    getPaymentsForCustomer: (Long) -> Flow<List<PaymentTransaction>>,
     modifier: Modifier = Modifier
 ) {
     var showPaymentDialog by remember { mutableStateOf(false) }
+    var showTransactionsDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -321,6 +331,17 @@ fun CustomerItemCard(
                                 tint = TealPrimary
                             )
                         }
+                    }
+
+                    // Transactions Button
+                    IconButton(
+                        onClick = { showTransactionsDialog = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Receipt,
+                            contentDescription = "Transactions",
+                            tint = TealPrimary
+                        )
                     }
 
                     // Add Payment Button
@@ -515,8 +536,49 @@ fun CustomerItemCard(
             customerName = customer.name,
             onDismiss = { showPaymentDialog = false },
             onConfirm = { amount ->
-                customer.id.let { id -> onAddPayment(id, amount) }
+                val dateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                customer.id.let { id -> onAddPayment(id, amount, dateString) }
                 showPaymentDialog = false
+            }
+        )
+    }
+
+    if (showTransactionsDialog) {
+        val payments by getPaymentsForCustomer(customer.id).collectAsState(initial = emptyList())
+        AlertDialog(
+            onDismissRequest = { showTransactionsDialog = false },
+            title = { Text("Payment Transactions for ${customer.name}") },
+            text = {
+                if (payments.isEmpty()) {
+                    Text("No payments recorded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    LazyColumn {
+                        items(payments) { payment ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = payment.dateString,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "₹${String.format("%.2f", payment.amountPaid)}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AmberAccent
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTransactionsDialog = false }) {
+                    Text("Close")
+                }
             }
         )
     }
