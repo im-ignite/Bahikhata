@@ -15,6 +15,7 @@ import com.example.data.model.SaleTransaction
 import com.example.data.model.SyncStatus
 import com.example.data.repository.TradeRepository
 import com.example.ui.util.AppLanguage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -232,6 +233,36 @@ class TradeViewModel(
     fun deleteSale(sale: SaleTransaction) {
         viewModelScope.launch {
             repository.deleteSale(sale)
+        }
+    }
+
+    fun registerCustomerPayment(customerId: Long, amount: Double) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (amount <= 0.0) return@launch
+
+            var remainingAmount = amount
+            // Fetch all sales for this customer, sorted by oldest first
+            val customerSales = allSales.value.filter { it.customerId == customerId }
+                .sortedBy { it.timestamp }
+
+            for (sale in customerSales) {
+                val dueAmount = sale.totalPrice - sale.amountPaid
+                if (dueAmount > 0) {
+                    if (remainingAmount >= dueAmount) {
+                        // Fully pay this sale
+                        val updatedSale = sale.copy(amountPaid = sale.amountPaid + dueAmount)
+                        repository.updateSale(updatedSale)
+                        remainingAmount -= dueAmount
+                    } else {
+                        // Partially pay this sale
+                        val updatedSale = sale.copy(amountPaid = sale.amountPaid + remainingAmount)
+                        repository.updateSale(updatedSale)
+                        remainingAmount = 0.0
+                    }
+                }
+                
+                if (remainingAmount <= 0) break
+            }
         }
     }
 

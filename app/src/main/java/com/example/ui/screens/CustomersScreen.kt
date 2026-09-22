@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
@@ -75,6 +76,7 @@ fun CustomersScreen(
     onDeleteCustomer: (Customer) -> Unit = {},
     onUpdateSale: (SaleTransaction) -> Unit = {},
     onNavigateToSales: () -> Unit,
+    onAddPayment: (Long, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
@@ -143,7 +145,8 @@ fun CustomersScreen(
                     salesHistory = customerSales,
                     onNewSale = onNavigateToSales,
                     onDelete = { customerToDelete = customer },
-                    onEditSale = { saleToEdit = it }
+                    onEditSale = { saleToEdit = it },
+                    onAddPayment = onAddPayment
                 )
             }
         }
@@ -241,8 +244,10 @@ fun CustomerItemCard(
     onNewSale: () -> Unit,
     onDelete: () -> Unit = {},
     onEditSale: (SaleTransaction) -> Unit = {},
+    onAddPayment: (Long, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showPaymentDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -316,6 +321,17 @@ fun CustomerItemCard(
                                 tint = TealPrimary
                             )
                         }
+                    }
+
+                    // Add Payment Button
+                    IconButton(
+                        onClick = { showPaymentDialog = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Payments,
+                            contentDescription = "Add Payment",
+                            tint = TealPrimary
+                        )
                     }
 
                     // Delete Client Button
@@ -493,6 +509,65 @@ fun CustomerItemCard(
             }
         }
     }
+
+    if (showPaymentDialog) {
+        CustomerPaymentDialog(
+            customerName = customer.name,
+            onDismiss = { showPaymentDialog = false },
+            onConfirm = { amount ->
+                customer.id.let { id -> onAddPayment(id, amount) }
+                showPaymentDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun CustomerPaymentDialog(
+    customerName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (Double) -> Unit
+) {
+    var amountText by remember { mutableStateOf("") }
+    var isError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Add Payment for $customerName") },
+        text = {
+            OutlinedTextField(
+                value = amountText,
+                onValueChange = { 
+                    amountText = it
+                    isError = false
+                },
+                label = { Text("Amount Paid") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                isError = isError,
+                supportingText = { if (isError) Text("Please enter a valid amount") }
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val amount = amountText.toDoubleOrNull()
+                    if (amount != null && amount > 0) {
+                        onConfirm(amount)
+                    } else {
+                        isError = true
+                    }
+                }
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
