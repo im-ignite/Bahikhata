@@ -136,6 +136,17 @@ class AppStrings(val language: AppLanguage) {
     val enterCustomGoogleEmail: String get() = if (isHindi) "Google ईमेल दर्ज करें" else "Enter Google Email"
     val quickSignInBtn: String get() = if (isHindi) "साइन इन करें" else "Sign In"
 
+    // Hamburger Menu Drawer & Footer Strings
+    val drawerHeaderTitle: String get() = if (isHindi) "राय फिश मेनू" else "RAI FISH Menu"
+    val drawerHeaderTagline: String get() = if (isHindi) "तालाब मछली प्रबंधन व बिक्री" else "Pond Fish Sales & Management"
+    val drawerNavSection: String get() = if (isHindi) "मुख्य नेविगेशन" else "Navigation"
+    val drawerQuickControlsSection: String get() = if (isHindi) "क्विक कंट्रोल" else "Quick Controls"
+    val drawerContactTitle: String get() = if (isHindi) "संपर्क एवं सहायता" else "Contact & Support"
+    val drawerContactSub: String get() = if (isHindi) "मालिक / सहायता नंबर" else "Owner / Helpline"
+    val drawerCallNow: String get() = if (isHindi) "कॉल करें" else "Call Now"
+    val drawerContactPhone: String get() = "+91 70046 54067"
+    val drawerSupportEmail: String get() = "raifish.support@gmail.com"
+
 }
 
 val LocalAppStrings = compositionLocalOf { AppStrings(AppLanguage.ENGLISH) }

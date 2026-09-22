@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,10 +53,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -63,6 +67,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -70,8 +76,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -88,6 +96,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.model.SyncStatus
 import com.example.data.repository.TradeRepository
 import com.example.notification.NotificationHelper
+import com.example.ui.components.AppDrawerContent
 import com.example.ui.components.GoogleAccountProfileDialog
 import com.example.ui.components.GoogleLogoIcon
 
@@ -235,186 +244,127 @@ fun MainAppScreen(
         LocalAppStrings provides strings,
         LocalAppLanguage provides uiState.language
     ) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = strings.appTitle,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
+        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        val scope = rememberCoroutineScope()
 
-                        // Real-time Cloud Sync Pill
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
-                                .clickable {
-                                    if (googleAccount.isLinked) {
-                                        viewModel.triggerCloudSync()
-                                        Toast.makeText(
-                                            context,
-                                            if (strings.isHindi) "Google क्लाउड से सिंक हो रहा है..." else "Syncing with Google Cloud...",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        doGoogleSignIn()
-                                    }
-                                }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                                .testTag("sync_status_indicator")
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (syncStatus == SyncStatus.SYNCING) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(10.dp),
-                                        strokeWidth = 2.dp,
-                                        color = TealPrimary
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = strings.syncStatusSyncing,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontSize = 11.sp,
-                                        color = TealPrimary
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .background(
-                                                if (googleAccount.isLinked) SuccessGreen else Color.Gray,
-                                                CircleShape
-                                            )
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = if (googleAccount.isLinked) strings.cloudSyncOnlineStatus else strings.syncStatusOffline,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontSize = 11.sp,
-                                        color = if (googleAccount.isLinked) SuccessGreen else Color.Gray
-                                    )
-                                }
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet(
+                    modifier = Modifier
+                        .fillMaxWidth(0.32f)
+                        .widthIn(min = 280.dp, max = 380.dp)
+                ) {
+                    AppDrawerContent(
+                        activeTab = uiState.activeTab,
+                        onSelectTab = { tabIndex ->
+                            viewModel.setActiveTab(tabIndex)
+                        },
+                        isDarkMode = isDarkMode,
+                        onToggleDarkMode = onToggleDarkMode,
+                        onOpenSettings = {
+                            showSettingsDialog = true
+                        },
+                        onSyncNow = {
+                            viewModel.triggerCloudSync()
+                            Toast.makeText(context, if (strings.isHindi) "क्लाउड सिंक शुरू किया गया" else "Cloud sync initiated", Toast.LENGTH_SHORT).show()
+                        },
+                        googleAccountEmail = googleAccount.email,
+                        isCloudSynced = syncStatus == SyncStatus.SUCCESS || googleAccount.isLinked,
+                        onCloseDrawer = {
+                            scope.launch {
+                                drawerState.close()
                             }
                         }
-                    }
-                },
-                actions = {
-                    // Google Account Profile Chip or Sign-In Button
-                    if (googleAccount.isLinked) {
-                        Box(
+                    )
+                }
+            }
+        ) {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+            topBar = {
+                TopAppBar(
+                    navigationIcon = {
+                        Card(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(TealPrimary.copy(alpha = 0.12f))
-                                .clickable { showGoogleProfileDialog = true }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                                .testTag("google_profile_btn")
+                                .padding(horizontal = 8.dp)
+                                .clickable {
+                                    scope.launch {
+                                        drawerState.open()
+                                    }
+                                },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.padding(8.dp)) {
+                                Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu")
+                            }
+                        }
+                    },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "RAI FISH",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            // Connect Indicator
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .clickable { doGoogleSignIn() }
+                                    .padding(4.dp)
+                            ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(22.dp)
-                                        .clip(CircleShape)
-                                        .background(TealPrimary),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = googleAccount.initials,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 10.sp
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(5.dp))
+                                        .size(10.dp)
+                                        .background(SuccessGreen, CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = googleAccount.displayName.split(" ").firstOrNull()?.take(8)
-                                        ?: googleAccount.email.substringBefore("@").take(8),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = TealPrimary
+                                    text = "Connect",
+                                    color = SuccessGreen,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
                         }
-                    } else {
-                        Button(
-                            onClick = { doGoogleSignIn() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            shape = RoundedCornerShape(16.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            modifier = Modifier
-                                .height(32.dp)
-                                .testTag("open_google_login_prompt_btn")
+                    },
+                    actions = {
+                        // Dark mode toggle
+                        IconButton(
+                            onClick = onToggleDarkMode,
+                            modifier = Modifier.testTag("dark_mode_toggle_btn")
                         ) {
-                            GoogleLogoIcon(sizeDp = 16)
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                text = strings.quickSignInBtn,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
+                            Icon(
+                                imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = strings.darkModeToggle,
+                                tint = if (isDarkMode) Color.White else Color(0xFF031633)
                             )
                         }
-                    }
 
-                    // Settings button at top
-                    IconButton(
-                        onClick = { showSettingsDialog = true },
-                        modifier = Modifier.testTag("settings_btn")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = strings.settingsButton,
-                            tint = TealPrimary
-                        )
-                    }
-
-                    // Dark mode toggle
-                    IconButton(
-                        onClick = onToggleDarkMode,
-                        modifier = Modifier.testTag("dark_mode_toggle_btn")
-                    ) {
-                        Icon(
-                            imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
-                            contentDescription = strings.darkModeToggle,
-                            tint = if (isDarkMode) AmberAccent else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    // Notification toggle / trigger check
-                    IconButton(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotifPermission) {
-                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
-                                val notifMsg = if (uiState.language == AppLanguage.HINDI)
-                                    "गूगल ड्राइव सिंक और कम स्टॉक के लिए पुश नोटिफिकेशन चालू हैं"
-                                else
-                                    "Push notifications active for Drive sync & low stock alerts"
-                                Toast.makeText(context, notifMsg, Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier.testTag("notification_settings_btn")
-                    ) {
-                        Icon(
-                            imageVector = if (hasNotifPermission) Icons.Default.NotificationsActive else Icons.Default.Notifications,
-                            contentDescription = strings.notificationAlerts,
-                            tint = if (hasNotifPermission) TealPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                        // Settings button at top
+                        IconButton(
+                            onClick = { showSettingsDialog = true },
+                            modifier = Modifier.testTag("settings_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = strings.settingsButton,
+                                tint = Color(0xFF3D6AF2) // Blue icon per design
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            )
-        },
-        bottomBar = {
+            },
+            bottomBar = {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 6.dp,
@@ -561,6 +511,7 @@ fun MainAppScreen(
                 }
             }
         }
+    }
     }
 
     // The CredentialManager now handles the Sign-In UI natively.

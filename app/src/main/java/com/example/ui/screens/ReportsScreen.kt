@@ -35,12 +35,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +75,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReportsScreen(
     metrics: VisualReportMetrics,
@@ -91,9 +97,7 @@ fun ReportsScreen(
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
     }
 
-    var dateInput by remember(specificSearchDate) {
-        mutableStateOf(if (specificSearchDate.isNotBlank()) specificSearchDate else todayDate)
-    }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier
@@ -199,9 +203,9 @@ fun ReportsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -255,41 +259,24 @@ fun ReportsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedTextField(
-                            value = dateInput,
-                            onValueChange = { dateInput = it },
-                            placeholder = { Text("YYYY-MM-DD") },
-                            singleLine = true,
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Event,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
+                        OutlinedButton(
+                            onClick = { showDatePicker = true },
                             modifier = Modifier
                                 .weight(1f)
+                                .height(56.dp)
                                 .testTag("specific_date_input"),
                             shape = RoundedCornerShape(12.dp)
-                        )
-
-                        Button(
-                            onClick = {
-                                if (dateInput.isNotBlank()) {
-                                    onSearchSpecificDate(dateInput.trim())
-                                }
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
-                            modifier = Modifier.testTag("search_specific_date_btn")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Search,
+                                imageVector = Icons.Default.Event,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp)
+                                tint = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Search", fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = specificSearchDate.ifBlank { "Select Date" },
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                         }
                     }
 
@@ -310,7 +297,6 @@ fun ReportsScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surface)
                                 .clickable {
-                                    dateInput = todayDate
                                     onSearchSpecificDate(todayDate)
                                 }
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -328,7 +314,6 @@ fun ReportsScreen(
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surface)
                                 .clickable {
-                                    dateInput = yesterdayDate
                                     onSearchSpecificDate(yesterdayDate)
                                 }
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
@@ -350,7 +335,7 @@ fun ReportsScreen(
             val filterNotice = when (selectedPreset) {
                 DateRangePreset.TODAY -> "Fish sales for Today ($todayDate)"
                 DateRangePreset.YESTERDAY -> "Fish sales for Yesterday ($yesterdayDate)"
-                DateRangePreset.SPECIFIC_DATE -> "Sales on Date: ${specificSearchDate.ifBlank { dateInput }}"
+                DateRangePreset.SPECIFIC_DATE -> "Sales on Date: ${specificSearchDate.ifBlank { "N/A" }}"
                 DateRangePreset.LAST_7_DAYS -> "Fish sales for Last 7 Days"
                 DateRangePreset.LAST_30_DAYS -> "Fish sales for Last 30 Days"
                 DateRangePreset.THIS_MONTH -> "Fish sales for This Month"
@@ -617,6 +602,41 @@ fun ReportsScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = try {
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                sdf.parse(if (specificSearchDate.isNotBlank()) specificSearchDate else todayDate)?.time ?: System.currentTimeMillis()
+            } catch (e: Exception) {
+                System.currentTimeMillis()
+            }
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val selected = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(millis))
+                            onSearchSpecificDate(selected)
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("Select")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }

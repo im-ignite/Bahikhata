@@ -49,6 +49,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -61,6 +63,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -485,21 +488,6 @@ fun DashboardDailyScreen(
                             )
 
                             Spacer(modifier = Modifier.height(4.dp))
-
-                            Button(
-                                onClick = { showRecordSaleDialog = true },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
-                                modifier = Modifier.testTag("empty_state_record_sale_btn")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(strings.recordFishSaleButton, fontWeight = FontWeight.Bold)
-                            }
                         }
                     }
                 }
@@ -774,72 +762,28 @@ fun DashboardDailyScreen(
         )
     }
 
-    // Dialog: Pick Any Specific Date
+    // Dialog: Pick Any Specific Date using Calendar Picker
     if (showDatePickerDialog) {
-        var inputPickerDate by remember { mutableStateOf(selectedDate) }
-        AlertDialog(
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = try {
+                dateFormat.parse(selectedDate)?.time ?: System.currentTimeMillis()
+            } catch (e: Exception) {
+                System.currentTimeMillis()
+            }
+        )
+
+        DatePickerDialog(
             onDismissRequest = { showDatePickerDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = TealPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(strings.searchSpecificDateTitle, fontWeight = FontWeight.Bold)
-                }
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "Enter or choose date (YYYY-MM-DD) to view fish sales for that day:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    OutlinedTextField(
-                        value = inputPickerDate,
-                        onValueChange = { inputPickerDate = it },
-                        label = { Text("Date (YYYY-MM-DD)") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().testTag("picker_date_input")
-                    )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { inputPickerDate = todayDate },
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text("Today ($todayDate)", style = MaterialTheme.typography.labelSmall)
-                        }
-
-                        val yDate = remember {
-                            val c = Calendar.getInstance()
-                            c.add(Calendar.DAY_OF_YEAR, -1)
-                            dateFormat.format(c.time)
-                        }
-                        OutlinedButton(
-                            onClick = { inputPickerDate = yDate },
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text("Yesterday", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-            },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
-                        if (inputPickerDate.isNotBlank()) {
-                            selectedDate = inputPickerDate.trim()
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            selectedDate = dateFormat.format(Date(millis))
                         }
                         showDatePickerDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = TealPrimary)
+                    }
                 ) {
-                    Text("Select Date")
+                    Text("Select")
                 }
             },
             dismissButton = {
@@ -847,7 +791,9 @@ fun DashboardDailyScreen(
                     Text("Cancel")
                 }
             }
-        )
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     // Removed Link Dialog
@@ -886,7 +832,7 @@ fun RecordFishSaleDialog(
     var weightInput by remember { mutableStateOf("") }
     var piecesInput by remember { mutableStateOf("1") }
     var rateInput by remember {
-        mutableStateOf(selectedProduct?.pricePerKg?.toString() ?: "180.0")
+        mutableStateOf(selectedProduct?.pricePerKg?.toString() ?: "120.0")
     }
     var saleDate by remember { mutableStateOf(selectedDate) }
 
