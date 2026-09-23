@@ -92,6 +92,10 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.aistudio.tradesync.wxqpzr.ui.VoiceAssistantBottomSheet
+import com.aistudio.tradesync.wxqpzr.ui.components.AiVoiceTriggerButton
+import com.aistudio.tradesync.wxqpzr.viewmodel.VoiceAssistantViewModel
 import com.example.data.local.AppDatabase
 import com.example.data.model.SyncStatus
 import com.example.data.repository.TradeRepository
@@ -171,6 +175,8 @@ fun MainAppScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showGoogleProfileDialog by remember { mutableStateOf(false) }
     var hasAutoPromptedLogin by rememberSaveable { mutableStateOf(false) }
+    var isVoiceAssistantOpen by remember { mutableStateOf(false) }
+    val voiceViewModel: VoiceAssistantViewModel = viewModel()
     
 
     val strings = remember(uiState.language) { AppStrings(uiState.language) }
@@ -332,6 +338,8 @@ fun MainAppScreen(
                                     fontWeight = FontWeight.Medium
                                 )
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            AiVoiceTriggerButton(onClick = { isVoiceAssistantOpen = true })
                         }
                     },
                     actions = {
@@ -606,6 +614,13 @@ fun MainAppScreen(
                 Toast.makeText(context, strings.clearAllDataSuccess, Toast.LENGTH_SHORT).show()
             },
             onDismiss = { showSettingsDialog = false }
+        )
+    }
+
+    if (isVoiceAssistantOpen) {
+        VoiceAssistantBottomSheet(
+            viewModel = voiceViewModel,
+            onDismiss = { isVoiceAssistantOpen = false }
         )
     }
 }
