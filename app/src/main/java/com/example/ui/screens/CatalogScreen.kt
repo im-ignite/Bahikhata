@@ -85,8 +85,8 @@ fun CatalogScreen(
 
     // Quick Calculator tool state on profile
     var calcSelectedProduct by remember { mutableStateOf<ProductItem?>(products.firstOrNull()) }
-    var calcPiecesText by remember { mutableStateOf("10") }
-    var calcWeightText by remember { mutableStateOf("25.0") }
+    var calcPiecesText by remember { mutableStateOf("") }
+    var calcWeightText by remember { mutableStateOf("") }
     var calcDropdownExpanded by remember { mutableStateOf(false) }
 
     val calcWeight = calcWeightText.toDoubleOrNull() ?: 0.0
