@@ -75,6 +75,7 @@ import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.DangerRed
 import com.example.ui.theme.SuccessGreen
 import com.example.ui.theme.TealPrimary
+import com.example.ui.util.LocalAppStrings
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -103,6 +104,7 @@ fun SalesScreen(
     var showRecordSaleDialog by remember { mutableStateOf(false) }
     var saleToEdit by remember { mutableStateOf<SaleTransaction?>(null) }
     var saleToDelete by remember { mutableStateOf<SaleTransaction?>(null) }
+    val strings = LocalAppStrings.current
 
     val totalSalesRevenue = sales.sumOf { it.totalPrice }
     val totalWeightSold = sales.sumOf { it.weightKg }
@@ -353,7 +355,7 @@ fun SalesScreen(
             },
             text = {
                 Text(
-                    text = "Are you sure you want to delete this sale of \"${saleItem.itemName}\" to ${saleItem.customerName} for ₹${String.format("%.2f", saleItem.totalPrice)}?",
+                    text = if (strings.isHindi) "क्या आप ${saleItem.customerName} को ${saleItem.itemName} की ₹${String.format("%.2f", saleItem.totalPrice)} की बिक्री को हटाना चाहते हैं?" else "Are you sure you want to delete this sale of \"${saleItem.itemName}\" to ${saleItem.customerName} for ₹${String.format("%.2f", saleItem.totalPrice)}?",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -367,7 +369,7 @@ fun SalesScreen(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.testTag("confirm_delete_sale_btn")
                 ) {
-                    Text("Delete")
+                    Text(strings.deleteButton)
                 }
             },
             dismissButton = {
@@ -375,7 +377,7 @@ fun SalesScreen(
                     onClick = { saleToDelete = null },
                     modifier = Modifier.testTag("cancel_delete_sale_btn")
                 ) {
-                    Text("Cancel")
+                    Text(strings.cancelButton)
                 }
             }
         )
@@ -599,6 +601,7 @@ fun RecordSaleDialog(
     ) -> Unit,
     onAddCustomer: (name: String, phone: String, address: String, notes: String) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     val today = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
 
     var selectedCustomer by remember { mutableStateOf<Customer?>(customers.firstOrNull()) }
@@ -641,7 +644,7 @@ fun RecordSaleDialog(
                     tint = AmberAccent
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Record Customer Sale", fontWeight = FontWeight.Bold)
+                Text(strings.recordCustomerSaleTitle, fontWeight = FontWeight.Bold)
             }
         },
         text = {
@@ -656,10 +659,10 @@ fun RecordSaleDialog(
                         onExpandedChange = { customerDropdownExpanded = !customerDropdownExpanded }
                     ) {
                         OutlinedTextField(
-                            value = selectedCustomer?.name ?: "Select or add customer",
+                            value = selectedCustomer?.name ?: (if (strings.isHindi) "ग्राहक चुनें या जोड़ें" else "Select or add customer"),
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Customer *") },
+                            label = { Text(strings.clientLabelText) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = customerDropdownExpanded) },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
@@ -694,7 +697,7 @@ fun RecordSaleDialog(
                         ) {
                             Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("+ Add New Customer", style = MaterialTheme.typography.labelMedium)
+                            Text(strings.addNewClientBtnText, style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 } else {
@@ -709,16 +712,16 @@ fun RecordSaleDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("New Customer Details", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                                Text(strings.newCustomerDetailsTitle, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
                                 TextButton(onClick = { isNewCustomerMode = false }) {
-                                    Text("Pick Existing", style = MaterialTheme.typography.labelSmall)
+                                    Text(strings.pickExistingLabelText, style = MaterialTheme.typography.labelSmall)
                                 }
                             }
 
                             OutlinedTextField(
                                 value = manualCustomerName,
                                 onValueChange = { manualCustomerName = it },
-                                label = { Text("Customer Name *") },
+                                label = { Text(strings.customerNameLabelText) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.fillMaxWidth().testTag("new_customer_name_input")
@@ -727,7 +730,7 @@ fun RecordSaleDialog(
                             OutlinedTextField(
                                 value = newCustomerPhone,
                                 onValueChange = { newCustomerPhone = it },
-                                label = { Text("Phone Number *") },
+                                label = { Text(strings.phoneNumberLabelText) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                                 singleLine = true,
                                 shape = RoundedCornerShape(10.dp),
@@ -737,7 +740,7 @@ fun RecordSaleDialog(
                             OutlinedTextField(
                                 value = newCustomerAddress,
                                 onValueChange = { newCustomerAddress = it },
-                                label = { Text("Delivery Address") },
+                                label = { Text(strings.addressLabelText) },
                                 singleLine = true,
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.fillMaxWidth().testTag("new_customer_address_input")
@@ -752,10 +755,10 @@ fun RecordSaleDialog(
                     onExpandedChange = { productDropdownExpanded = !productDropdownExpanded }
                 ) {
                     OutlinedTextField(
-                        value = selectedProduct?.let { "${it.name} (₹${it.pricePerKg}/kg)" } ?: "Select product from profile",
+                        value = selectedProduct?.let { "${it.name} (₹${it.pricePerKg}/kg)" } ?: (if (strings.isHindi) "प्रोफ़ाइल से उत्पाद चुनें" else "Select product from profile"),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Product / Commodity *") },
+                        label = { Text(strings.productCommodityLabelText) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productDropdownExpanded) },
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
@@ -793,8 +796,8 @@ fun RecordSaleDialog(
                     OutlinedTextField(
                         value = piecesText,
                         onValueChange = { piecesText = it },
-                        label = { Text("Pieces *") },
-                        placeholder = { Text("e.g. 10") },
+                        label = { Text(strings.piecesLabel) },
+                        placeholder = { Text(if (strings.isHindi) "उदा. 10" else "e.g. 10") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -806,8 +809,8 @@ fun RecordSaleDialog(
                     OutlinedTextField(
                         value = weightText,
                         onValueChange = { weightText = it },
-                        label = { Text("Weight (kg) *") },
-                        placeholder = { Text("e.g. 25.5") },
+                        label = { Text(strings.weightLabel) },
+                        placeholder = { Text(if (strings.isHindi) "उदा. 25.5" else "e.g. 25.5") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -832,7 +835,7 @@ fun RecordSaleDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Auto Price (${String.format("%.2f", inputWeight)} kg × ₹${String.format("%.2f", activePricePerKg)}):",
+                                text = if (strings.isHindi) "स्वचालित मूल्य (${String.format("%.2f", inputWeight)} किग्रा × ₹${String.format("%.2f", activePricePerKg)}):" else "Auto Price (${String.format("%.2f", inputWeight)} kg × ₹${String.format("%.2f", activePricePerKg)}):",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium
                             )
@@ -857,13 +860,13 @@ fun RecordSaleDialog(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Exceeds stock: ${String.format("%.1f", availableWeight)} kg available",
+                                        text = if (strings.isHindi) "स्टॉक से अधिक: ${String.format("%.1f", availableWeight)} किग्रा उपलब्ध है" else "Exceeds stock: ${String.format("%.1f", availableWeight)} kg available",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = DangerRed
                                     )
                                 } else {
                                     Text(
-                                        text = "Inventory Deduction: ${availablePieces} → ${remainingPieces.coerceAtLeast(0)} pcs, ${String.format("%.1f", availableWeight)} → ${String.format("%.1f", remainingWeight.coerceAtLeast(0.0))} kg",
+                                        text = if (strings.isHindi) "इन्वेंट्री कटौती: ${availablePieces} → ${remainingPieces.coerceAtLeast(0)} पीस, ${String.format("%.1f", availableWeight)} → ${String.format("%.1f", remainingWeight.coerceAtLeast(0.0))} किग्रा" else "Inventory Deduction: ${availablePieces} → ${remainingPieces.coerceAtLeast(0)} pcs, ${String.format("%.1f", availableWeight)} → ${String.format("%.1f", remainingWeight.coerceAtLeast(0.0))} kg",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -885,7 +888,7 @@ fun RecordSaleDialog(
 
                     val prodName = selectedProduct?.name ?: manualItemName.ifEmpty { "General Commodity" }
                     val prodId = selectedProduct?.id
-                    val amountPaid = 0.0 // amountPaidText was not defined in this dialog scope in SalesScreen
+                    val amountPaid = 0.0
 
                     onConfirm(
                         custId,
@@ -905,12 +908,12 @@ fun RecordSaleDialog(
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.testTag("confirm_record_sale_btn")
             ) {
-                Text("Confirm Sale & Deduct Stock")
+                Text(strings.confirmSaleButtonText)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(strings.cancelButton)
             }
         }
     )

@@ -147,6 +147,79 @@ class AppStrings(val language: AppLanguage) {
     val drawerContactPhone: String get() = "+91 9304565995"
     val drawerSupportEmail: String get() = "abhijeetanand1821@gmail.com"
 
+    // General Dialogs & Actions
+    val cancelButton: String get() = if (isHindi) "रद्द करें" else "Cancel"
+    val deleteButton: String get() = if (isHindi) "हटाएं" else "Delete"
+    val confirmButton: String get() = if (isHindi) "पुष्टि करें" else "Confirm"
+    val closeButtonTitle: String get() = if (isHindi) "बंद करें" else "Close"
+    val selectButton: String get() = if (isHindi) "चुनें" else "Select"
+    val changeButton: String get() = if (isHindi) "बदलें" else "Change"
+    val clearFilterButton: String get() = if (isHindi) "फ़िल्टर साफ़ करें" else "Clear Filter"
+
+    // Edit Sale Dialog
+    val editSaleRecordTitle: String get() = if (isHindi) "बिक्री रिकॉर्ड संपादित करें" else "Edit Sale Record"
+    val amountPaidLabelText: String get() = if (isHindi) "जमा राशि (₹)" else "Amount Paid (₹)"
+
+    // Google Sign In Dialog extra buttons
+    val saveBackupButton: String get() = if (isHindi) "Google ड्राइव / फोन पर बैकअप सेव करें" else "Save Backup to Google Drive / Phone"
+    val restoreBackupButton: String get() = if (isHindi) "बैकअप फाइल से रिस्टोर करें" else "Restore from Backup File"
+
+    // Settings Dialog extra
+    val googleDriveSyncHeader: String get() = if (isHindi) "Google ड्राइव सिंक" else "Google Drive Sync"
+    val switchButton: String get() = if (isHindi) "बदलें" else "Switch"
+    val cloudFolderLabel: String get() = if (isHindi) "क्लाउड फ़ोल्डर: Google Cloud / RaiFish_Backups" else "Cloud Folder: Google Cloud / RaiFish_Backups"
+    val realtimeSyncLabel: String get() = if (isHindi) "रियल-टाइम सिंक" else "Real-time Sync"
+    val csvButton: String get() = if (isHindi) "CSV" else "CSV"
+    val syncButton: String get() = if (isHindi) "सिंक करें" else "Sync"
+    val clearEverythingButton: String get() = if (isHindi) "सब कुछ साफ़ करें" else "Clear Everything"
+
+    // Catalog Screen & Product Dialogs
+    val sellingProductLabel: String get() = if (isHindi) "बिक्री उत्पाद" else "Selling Product"
+    val itemNameLabelText: String get() = if (isHindi) "मछली का नाम *" else "Item Name *"
+    val itemNamePlaceholderText: String get() = if (isHindi) "उदा. रोहू, कतला, टिलापिया" else "e.g. Rohu Fish, Catla, Tilapia"
+    val priceOnWeightBasisLabel: String get() = if (isHindi) "वजन के आधार पर दर (₹/किग्रा) *" else "Price on Weight Basis (₹ / kg) *"
+    val pricePlaceholderText: String get() = if (isHindi) "उदा. 150.00" else "e.g. 120.50"
+    val stockPiecesLabel: String get() = if (isHindi) "स्टॉक पीस" else "Stock Pieces"
+    val stockWeightLabel: String get() = if (isHindi) "स्टॉक वजन (किग्रा)" else "Stock Weight (kg)"
+    val saveToProfileButton: String get() = if (isHindi) "प्रोफ़ाइल में सेव करें" else "Save to Profile"
+
+    // Customers Screen & Dialogs
+    val deleteClientTitle: String get() = if (isHindi) "ग्राहक हटाएं" else "Delete Client"
+    val paymentTransactionsTitle: String get() = if (isHindi) "भुगतान लेनदेन" else "Payment Transactions"
+    val noPaymentsRecordedMsg: String get() = if (isHindi) "अभी तक कोई भुगतान दर्ज नहीं किया गया है।" else "No payments recorded yet."
+    val validAmountErrorMsg: String get() = if (isHindi) "कृपया वैध राशि दर्ज करें" else "Please enter a valid amount"
+    val addCustomerProfileTitle: String get() = if (isHindi) "नया ग्राहक प्रोफ़ाइल जोड़ें" else "Add Customer Profile"
+    val customerNameLabelText: String get() = if (isHindi) "ग्राहक का नाम *" else "Customer Name *"
+    val customerNamePlaceholderText: String get() = if (isHindi) "उदा. रामेश्वर महतो" else "e.g. Apex Industrial Works"
+    val phoneNumberLabelText: String get() = if (isHindi) "फ़ोन नंबर *" else "Phone Number *"
+    val phoneNumberPlaceholderText: String get() = if (isHindi) "उदा. +91 9876543210" else "e.g. +1 (555) 123-4567"
+    val addressLabelText: String get() = if (isHindi) "पता / डिलीवरी स्थान" else "Address / Delivery Location"
+    val addressPlaceholderText: String get() = if (isHindi) "उदा. मछली तालाब, मुख्य मार्ग" else "120 Commerce Way, Building 4"
+    val notesLabelText: String get() = if (isHindi) "टिप्पणी (पसंद, डिलीवरी समय)" else "Notes (Preferences, delivery window)"
+    val saveCustomerButton: String get() = if (isHindi) "ग्राहक सेव करें" else "Save Customer"
+
+    // Dashboard Daily Screen
+    val filterSearchPlaceholderText: String get() = if (isHindi) "इस तारीख पर ग्राहक का नाम या मछली किस्म खोजें..." else "Filter client name or fish type on this date..."
+    val callClientButton: String get() = if (isHindi) "ग्राहक को कॉल करें" else "Call Client"
+    val deleteSaleRecordTitleText: String get() = if (isHindi) "मछली बिक्री रिकॉर्ड हटाएं?" else "Delete Fish Sale Record?"
+    val retailCustomerLabelText: String get() = if (isHindi) "खुदरा / नियमित ग्राहक" else "Retail / Regular Customer"
+    val regularCustomerSubText: String get() = if (isHindi) "नाम या फोन आवश्यक नहीं है। बिक्री 'नियमित ग्राहक' के अंतर्गत दर्ज की जाएगी।" else "No name or phone required. Sale will be recorded under 'Regular Customer'."
+    val clientLabelText: String get() = if (isHindi) "ग्राहक *" else "Client *"
+    val addNewClientBtnText: String get() = if (isHindi) "+ नया ग्राहक जोड़ें" else "+ Add New Client"
+    val newClientInfoTitleText: String get() = if (isHindi) "नये ग्राहक की जानकारी" else "New Client Info"
+    val pickExistingLabelText: String get() = if (isHindi) "मौजूदा चुनें" else "Pick Existing"
+    val fishVarietyLabelText: String get() = if (isHindi) "मछली की किस्म *" else "Fish Variety / Species *"
+    val typeOtherFishBtnText: String get() = if (isHindi) "+ अन्य मछली किस्म टाइप करें" else "+ Type Other Fish Species"
+    val fishSpeciesNameLabelText: String get() = if (isHindi) "मछली का नाम / किस्म *" else "Fish Species / Name *"
+    val chooseFromListBtnText: String get() = if (isHindi) "मछली सूची से चुनें" else "Choose from Fish Species List"
+    val saveSaleRecordButton: String get() = if (isHindi) "बिक्री रिकॉर्ड सेव करें" else "Save Sale Record"
+
+    // Sales Screen
+    val recordCustomerSaleTitle: String get() = if (isHindi) "ग्राहक बिक्री दर्ज करें" else "Record Customer Sale"
+    val newCustomerDetailsTitle: String get() = if (isHindi) "नये ग्राहक का विवरण" else "New Customer Details"
+    val productCommodityLabelText: String get() = if (isHindi) "मछली / उत्पाद *" else "Product / Commodity *"
+    val confirmSaleButtonText: String get() = if (isHindi) "बिक्री पक्की करें व स्टॉक घटाएं" else "Confirm Sale & Deduct Stock"
+
 }
 
 val LocalAppStrings = compositionLocalOf { AppStrings(AppLanguage.ENGLISH) }

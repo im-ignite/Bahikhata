@@ -242,7 +242,7 @@ fun SettingsDialog(
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Google Drive Sync", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
+                                        Text(strings.googleDriveSyncHeader, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp)
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Box(modifier = Modifier.size(8.dp).background(SuccessGreen, CircleShape))
                                     }
@@ -256,7 +256,7 @@ fun SettingsDialog(
                                 ) {
                                     Icon(Icons.Default.Link, contentDescription = null, tint = TealPrimary, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Switch", color = TealPrimary, fontSize = 12.sp)
+                                    Text(strings.switchButton, color = TealPrimary, fontSize = 12.sp)
                                 }
                             }
 
@@ -270,14 +270,14 @@ fun SettingsDialog(
                             ) {
                                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Cloud Folder: Google Cloud / RaiFish_Backups", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                        Text(strings.cloudFolderLabel, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                         Spacer(modifier = Modifier.height(2.dp))
                                         val dateStr = if (googleAccount.lastSyncTimestamp > 0) {
                                             SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(
                                                 Date(googleAccount.lastSyncTimestamp)
                                             )
                                         } else "Never"
-                                        Text("Last Synced: $dateStr", color = Color.LightGray, fontSize = 11.sp)
+                                        Text(if (strings.isHindi) "अंतिम सिंक: $dateStr" else "Last Synced: $dateStr", color = Color.LightGray, fontSize = 11.sp)
                                     }
                                     Icon(Icons.Default.CloudDone, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(24.dp))
                                 }
@@ -296,7 +296,7 @@ fun SettingsDialog(
                                     ),
                                     modifier = Modifier.scale(0.8f)
                                 )
-                                Text("Real-time Sync", color = Color.White, fontSize = 12.sp)
+                                Text(strings.realtimeSyncLabel, color = Color.White, fontSize = 12.sp)
 
                                 Spacer(modifier = Modifier.weight(1f))
 
@@ -308,7 +308,7 @@ fun SettingsDialog(
                                 ) {
                                     Icon(Icons.Default.Download, contentDescription = null, tint = TealPrimary, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("CSV", color = TealPrimary, fontSize = 12.sp)
+                                    Text(strings.csvButton, color = TealPrimary, fontSize = 12.sp)
                                 }
 
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -326,7 +326,7 @@ fun SettingsDialog(
                                         Icon(Icons.Default.Sync, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
                                     }
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Sync", color = Color.White, fontSize = 12.sp)
+                                    Text(strings.syncButton, color = Color.White, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -468,12 +468,12 @@ fun SettingsDialog(
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.testTag("confirm_clear_all_btn")
                 ) {
-                    Text("Clear Everything")
+                    Text(strings.clearEverythingButton)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmClearDialog = false }) {
-                    Text("Cancel")
+                    Text(strings.cancelButton)
                 }
             }
         )

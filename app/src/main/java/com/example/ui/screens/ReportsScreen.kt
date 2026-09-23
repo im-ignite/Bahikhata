@@ -241,7 +241,7 @@ fun ReportsScreen(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Clear Filter", style = MaterialTheme.typography.labelSmall)
+                                Text(strings.clearFilterButton, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -627,12 +627,12 @@ fun ReportsScreen(
                         showDatePicker = false
                     }
                 ) {
-                    Text("Select")
+                    Text(strings.selectButton)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
+                    Text(strings.cancelButton)
                 }
             }
         ) {

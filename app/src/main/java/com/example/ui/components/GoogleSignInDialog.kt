@@ -234,7 +234,7 @@ fun GoogleAccountProfileDialog(
                 ) {
                     Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp), tint = TealPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save Backup to Google Drive / Phone", color = TealPrimary, fontSize = 12.sp)
+                    Text(strings.saveBackupButton, color = TealPrimary, fontSize = 12.sp)
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -249,7 +249,7 @@ fun GoogleAccountProfileDialog(
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp), tint = SuccessGreen)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Restore from Backup File", color = SuccessGreen, fontSize = 12.sp)
+                    Text(strings.restoreBackupButton, color = SuccessGreen, fontSize = 12.sp)
                 }
 
                 Spacer(modifier = Modifier.height(6.dp))

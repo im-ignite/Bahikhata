@@ -217,10 +217,10 @@ fun CatalogScreen(
                         ) {
                             OutlinedTextField(
                                 value = calcSelectedProduct?.let { "${it.name} (@ ₹${it.pricePerKg}/kg)" }
-                                    ?: "Select product to calculate",
+                                    ?: if (strings.isHindi) "गणना के लिए उत्पाद चुनें" else "Select product to calculate",
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Selling Product") },
+                                label = { Text(strings.sellingProductLabel) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = calcDropdownExpanded) },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
@@ -254,7 +254,7 @@ fun CatalogScreen(
                             OutlinedTextField(
                                 value = calcPiecesText,
                                 onValueChange = { calcPiecesText = it },
-                                label = { Text("Pieces") },
+                                label = { Text(strings.piecesLabel) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
@@ -264,7 +264,7 @@ fun CatalogScreen(
                             OutlinedTextField(
                                 value = calcWeightText,
                                 onValueChange = { calcWeightText = it },
-                                label = { Text("Weight (kg)") },
+                                label = { Text(strings.weightLabel) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
@@ -498,6 +498,7 @@ fun AddEditProductDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, pricePerKg: Double, pieces: Int, weight: Double, category: String) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var name by remember { mutableStateOf(product?.name ?: "") }
     var pricePerKgText by remember { mutableStateOf(product?.pricePerKg?.toString() ?: "") }
     var piecesText by remember { mutableStateOf(product?.stockPieces?.toString() ?: "100") }
@@ -508,7 +509,7 @@ fun AddEditProductDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (product == null) "Add Thing & Price (Main Profile)" else "Edit Product",
+                text = if (product == null) (if (strings.isHindi) "मछली किस्म और दर जोड़ें" else "Add Fish Species") else (if (strings.isHindi) "मछली दर संपादित करें" else "Edit Fish Rate"),
                 fontWeight = FontWeight.Bold
             )
         },
@@ -518,7 +519,7 @@ fun AddEditProductDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Price is added on weight basis only (₹/kg) for automatic calculation during sales and inventory deduction.",
+                    text = if (strings.isHindi) "बिक्री और इन्वेंट्री कटौती के दौरान स्वचालित गणना के लिए दर केवल वजन के आधार पर (₹/किग्रा) जोड़ी जाती है।" else "Price is added on weight basis only (₹/kg) for automatic calculation during sales and inventory deduction.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -526,8 +527,8 @@ fun AddEditProductDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Item Name *") },
-                    placeholder = { Text("e.g. Copper Wire") },
+                    label = { Text(strings.itemNameLabelText) },
+                    placeholder = { Text(strings.itemNamePlaceholderText) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().testTag("product_name_input")
@@ -536,8 +537,8 @@ fun AddEditProductDialog(
                 OutlinedTextField(
                     value = pricePerKgText,
                     onValueChange = { pricePerKgText = it },
-                    label = { Text("Price on Weight Basis (₹ / kg) *") },
-                    placeholder = { Text("e.g. 120.50") },
+                    label = { Text(strings.priceOnWeightBasisLabel) },
+                    placeholder = { Text(strings.pricePlaceholderText) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -551,7 +552,7 @@ fun AddEditProductDialog(
                     OutlinedTextField(
                         value = piecesText,
                         onValueChange = { piecesText = it },
-                        label = { Text("Stock Pieces") },
+                        label = { Text(strings.stockPiecesLabel) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -561,7 +562,7 @@ fun AddEditProductDialog(
                     OutlinedTextField(
                         value = weightText,
                         onValueChange = { weightText = it },
-                        label = { Text("Stock Weight (kg)") },
+                        label = { Text(strings.stockWeightLabel) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -572,7 +573,7 @@ fun AddEditProductDialog(
                 OutlinedTextField(
                     value = category,
                     onValueChange = { category = it },
-                    label = { Text("Category") },
+                    label = { Text(strings.categoryLabel) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().testTag("product_category_input")
@@ -594,12 +595,12 @@ fun AddEditProductDialog(
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.testTag("confirm_save_product_btn")
             ) {
-                Text("Save to Profile")
+                Text(strings.saveToProfileButton)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(strings.cancelButton)
             }
         }
     )

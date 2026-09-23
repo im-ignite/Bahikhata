@@ -69,6 +69,7 @@ import com.example.ui.components.EditSaleDialog
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.CyanSecondary
 import com.example.ui.theme.TealPrimary
+import com.example.ui.util.LocalAppStrings
 import kotlinx.coroutines.flow.Flow
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -86,6 +87,7 @@ fun CustomersScreen(
     getPaymentsForCustomer: (Long) -> Flow<List<PaymentTransaction>>,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     var showAddDialog by remember { mutableStateOf(false) }
     var customerToDelete by remember { mutableStateOf<Customer?>(null) }
     var saleToEdit by remember { mutableStateOf<SaleTransaction?>(null) }
@@ -198,12 +200,12 @@ fun CustomersScreen(
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Delete Client", fontWeight = FontWeight.Bold)
+                    Text(text = strings.deleteClientTitle, fontWeight = FontWeight.Bold)
                 }
             },
             text = {
                 Text(
-                    text = "Are you sure you want to delete client \"${client.name}\"? This will remove their customer profile from the CRM.",
+                    text = if (strings.isHindi) "क्या आप ग्राहक \"${client.name}\" को हटाना चाहते हैं? यह CRM से उनकी प्रोफ़ाइल हटा देगा।" else "Are you sure you want to delete client \"${client.name}\"? This will remove their customer profile from the CRM.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -217,7 +219,7 @@ fun CustomersScreen(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.testTag("confirm_delete_customer_btn")
                 ) {
-                    Text("Delete Client")
+                    Text(strings.deleteClientTitle)
                 }
             },
             dismissButton = {
@@ -225,7 +227,7 @@ fun CustomersScreen(
                     onClick = { customerToDelete = null },
                     modifier = Modifier.testTag("cancel_delete_customer_btn")
                 ) {
-                    Text("Cancel")
+                    Text(strings.cancelButton)
                 }
             }
         )
@@ -258,6 +260,7 @@ fun CustomerItemCard(
 ) {
     var showPaymentDialog by remember { mutableStateOf(false) }
     var showTransactionsDialog by remember { mutableStateOf(false) }
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -516,6 +519,7 @@ fun CustomerItemCard(
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
+                    val strings = LocalAppStrings.current
                     Button(
                         onClick = onNewSale,
                         shape = RoundedCornerShape(10.dp),
@@ -524,7 +528,7 @@ fun CustomerItemCard(
                     ) {
                         Icon(imageVector = Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Add Sale for ${customer.name}", style = MaterialTheme.typography.labelMedium)
+                        Text(if (strings.isHindi) "${customer.name} के लिए बिक्री जोड़ें" else "Add Sale for ${customer.name}", style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
@@ -547,10 +551,10 @@ fun CustomerItemCard(
         val payments by getPaymentsForCustomer(customer.id).collectAsState(initial = emptyList())
         AlertDialog(
             onDismissRequest = { showTransactionsDialog = false },
-            title = { Text("Payment Transactions for ${customer.name}") },
+            title = { Text(if (strings.isHindi) "${customer.name} के भुगतान लेनदेन" else "Payment Transactions for ${customer.name}") },
             text = {
                 if (payments.isEmpty()) {
-                    Text("No payments recorded yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(strings.noPaymentsRecordedMsg, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     LazyColumn {
                         items(payments) { payment ->
@@ -577,7 +581,7 @@ fun CustomerItemCard(
             },
             confirmButton = {
                 TextButton(onClick = { showTransactionsDialog = false }) {
-                    Text("Close")
+                    Text(strings.closeButtonTitle)
                 }
             }
         )
@@ -590,12 +594,13 @@ fun CustomerPaymentDialog(
     onDismiss: () -> Unit,
     onConfirm: (Double) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var amountText by remember { mutableStateOf("") }
     var isError by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Add Payment for $customerName") },
+        title = { Text(text = if (strings.isHindi) "$customerName के लिए भुगतान जोड़ें" else "Add Payment for $customerName") },
         text = {
             OutlinedTextField(
                 value = amountText,
@@ -603,11 +608,11 @@ fun CustomerPaymentDialog(
                     amountText = it
                     isError = false
                 },
-                label = { Text("Amount Paid") },
+                label = { Text(strings.amountPaidLabelText) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 isError = isError,
-                supportingText = { if (isError) Text("Please enter a valid amount") }
+                supportingText = { if (isError) Text(strings.validAmountErrorMsg) }
             )
         },
         confirmButton = {
@@ -621,12 +626,12 @@ fun CustomerPaymentDialog(
                     }
                 }
             ) {
-                Text("Confirm")
+                Text(strings.confirmButton)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(strings.cancelButton)
             }
         }
     )
@@ -637,6 +642,7 @@ fun AddCustomerDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, phone: String, address: String, notes: String) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
@@ -645,7 +651,7 @@ fun AddCustomerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Add Customer Profile", fontWeight = FontWeight.Bold)
+            Text(strings.addCustomerProfileTitle, fontWeight = FontWeight.Bold)
         },
         text = {
             Column(
@@ -655,8 +661,8 @@ fun AddCustomerDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Customer Name *") },
-                    placeholder = { Text("e.g. Apex Industrial Works") },
+                    label = { Text(strings.customerNameLabelText) },
+                    placeholder = { Text(strings.customerNamePlaceholderText) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().testTag("cust_name_input")
@@ -665,8 +671,8 @@ fun AddCustomerDialog(
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Phone Number *") },
-                    placeholder = { Text("+1 (555) 123-4567") },
+                    label = { Text(strings.phoneNumberLabelText) },
+                    placeholder = { Text(strings.phoneNumberPlaceholderText) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -676,8 +682,8 @@ fun AddCustomerDialog(
                 OutlinedTextField(
                     value = address,
                     onValueChange = { address = it },
-                    label = { Text("Address / Delivery Location") },
-                    placeholder = { Text("120 Commerce Way, Building 4") },
+                    label = { Text(strings.addressLabelText) },
+                    placeholder = { Text(strings.addressPlaceholderText) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().testTag("cust_address_input")
@@ -686,7 +692,7 @@ fun AddCustomerDialog(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Notes (Preferences, delivery window)") },
+                    label = { Text(strings.notesLabelText) },
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().testTag("cust_notes_input")
                 )
@@ -704,12 +710,12 @@ fun AddCustomerDialog(
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.testTag("confirm_save_customer_btn")
             ) {
-                Text("Save Customer")
+                Text(strings.saveCustomerButton)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(strings.cancelButton)
             }
         }
     )

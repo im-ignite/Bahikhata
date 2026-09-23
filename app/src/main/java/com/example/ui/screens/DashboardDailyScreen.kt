@@ -391,7 +391,7 @@ fun DashboardDailyScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Filter client name or fish type on this date...") },
+                    placeholder = { Text(strings.filterSearchPlaceholderText) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -402,7 +402,7 @@ fun DashboardDailyScreen(
                     trailingIcon = {
                         if (searchQuery.isNotBlank()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear")
+                                Icon(imageVector = Icons.Default.Clear, contentDescription = if (strings.isHindi) "साफ़ करें" else "Clear")
                             }
                         }
                     },
@@ -644,7 +644,7 @@ fun DashboardDailyScreen(
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Call Client", color = SuccessGreen, style = MaterialTheme.typography.labelMedium)
+                                        Text(strings.callClientButton, color = SuccessGreen, style = MaterialTheme.typography.labelMedium)
                                     }
                                 } else {
                                     Spacer(modifier = Modifier.width(1.dp))
@@ -657,7 +657,7 @@ fun DashboardDailyScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
-                                            contentDescription = "Edit",
+                                            contentDescription = if (strings.isHindi) "संपादित करें" else "Edit",
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(18.dp)
                                         )
@@ -742,9 +742,9 @@ fun DashboardDailyScreen(
     saleToDelete?.let { sale ->
         AlertDialog(
             onDismissRequest = { saleToDelete = null },
-            title = { Text("Delete Fish Sale Record?") },
+            title = { Text(strings.deleteSaleRecordTitleText) },
             text = {
-                Text("Are you sure you want to delete the sale of ${sale.weightKg} kg ${sale.itemName} to ${sale.customerName} on ${sale.dateString}?")
+                Text(if (strings.isHindi) "क्या आप ${sale.dateString} को ${sale.customerName} को बेचे गए ${sale.weightKg} किग्रा ${sale.itemName} के बिक्री रिकॉर्ड को हटाना चाहते हैं?" else "Are you sure you want to delete the sale of ${sale.weightKg} kg ${sale.itemName} to ${sale.customerName} on ${sale.dateString}?")
             },
             confirmButton = {
                 Button(
@@ -754,12 +754,12 @@ fun DashboardDailyScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = DangerRed)
                 ) {
-                    Text("Delete")
+                    Text(strings.deleteButton)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { saleToDelete = null }) {
-                    Text("Cancel")
+                    Text(strings.cancelButton)
                 }
             }
         )
@@ -786,12 +786,12 @@ fun DashboardDailyScreen(
                         showDatePickerDialog = false
                     }
                 ) {
-                    Text("Select")
+                    Text(strings.selectButton)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePickerDialog = false }) {
-                    Text("Cancel")
+                    Text(strings.cancelButton)
                 }
             }
         ) {
@@ -822,6 +822,7 @@ fun RecordFishSaleDialog(
     ) -> Unit,
     onAddNewCustomer: (name: String, phone: String, address: String, notes: String) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var selectedCustomer by remember { mutableStateOf(customers.firstOrNull()) }
     var isNewCustomerMode by remember { mutableStateOf(customers.isEmpty()) }
     var isRegularCustomerMode by remember { mutableStateOf(false) }
@@ -863,7 +864,7 @@ fun RecordFishSaleDialog(
                     tint = AmberAccent
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Record Fish Sale for $saleDate", fontWeight = FontWeight.Bold)
+                Text(if (strings.isHindi) "${saleDate} के लिए मछली बिक्री दर्ज करें" else "Record Fish Sale for $saleDate", fontWeight = FontWeight.Bold)
             }
         },
         text = {
@@ -884,12 +885,12 @@ fun RecordFishSaleDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Retail / Regular Customer", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                    Text(strings.retailCustomerLabelText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                                     TextButton(onClick = { isRegularCustomerMode = false; isNewCustomerMode = false }) {
-                                        Text("Change", style = MaterialTheme.typography.labelSmall)
+                                        Text(strings.changeButton, style = MaterialTheme.typography.labelSmall)
                                     }
                                 }
-                                Text("No name or phone required. Sale will be recorded under 'Regular Customer'.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(strings.regularCustomerSubText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     } else if (!isNewCustomerMode && customers.isNotEmpty()) {
@@ -898,10 +899,10 @@ fun RecordFishSaleDialog(
                             onExpandedChange = { customerDropdownExpanded = !customerDropdownExpanded }
                         ) {
                             OutlinedTextField(
-                                value = selectedCustomer?.name ?: "Select Client *",
+                                value = selectedCustomer?.name ?: (if (strings.isHindi) "ग्राहक चुनें *" else "Select Client *"),
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Client *") },
+                                label = { Text(strings.clientLabelText) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = customerDropdownExpanded) },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
@@ -936,7 +937,7 @@ fun RecordFishSaleDialog(
                             ) {
                                 Icon(imageVector = Icons.Default.Person, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Regular Customer", style = MaterialTheme.typography.labelSmall)
+                                Text(if (strings.isHindi) "नियमित ग्राहक" else "Regular Customer", style = MaterialTheme.typography.labelSmall)
                             }
                             TextButton(
                                 onClick = { isNewCustomerMode = true; isRegularCustomerMode = false },
@@ -944,7 +945,7 @@ fun RecordFishSaleDialog(
                             ) {
                                 Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("+ Add New Client", style = MaterialTheme.typography.labelSmall)
+                                Text(strings.addNewClientBtnText, style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     } else {
@@ -958,10 +959,10 @@ fun RecordFishSaleDialog(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("New Client Info", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                    Text(if (strings.isHindi) "नये ग्राहक की जानकारी" else "New Client Info", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                                     if (customers.isNotEmpty()) {
                                         TextButton(onClick = { isNewCustomerMode = false; isRegularCustomerMode = false }) {
-                                            Text("Pick Existing", style = MaterialTheme.typography.labelSmall)
+                                            Text(if (strings.isHindi) "मौजूदा चुनें" else "Pick Existing", style = MaterialTheme.typography.labelSmall)
                                         }
                                     }
                                 }
@@ -969,7 +970,7 @@ fun RecordFishSaleDialog(
                                 OutlinedTextField(
                                     value = manualCustomerName,
                                     onValueChange = { manualCustomerName = it },
-                                    label = { Text("Client Name *") },
+                                    label = { Text(strings.customerNameLabelText) },
                                     singleLine = true,
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.fillMaxWidth().testTag("new_client_name_input")
@@ -978,7 +979,7 @@ fun RecordFishSaleDialog(
                                 OutlinedTextField(
                                     value = manualCustomerPhone,
                                     onValueChange = { manualCustomerPhone = it },
-                                    label = { Text("Phone Number") },
+                                    label = { Text(strings.phoneNumberLabelText) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                                     singleLine = true,
                                     shape = RoundedCornerShape(10.dp),
@@ -997,10 +998,10 @@ fun RecordFishSaleDialog(
                             onExpandedChange = { productDropdownExpanded = !productDropdownExpanded }
                         ) {
                             OutlinedTextField(
-                                value = selectedProduct?.let { "${it.name} (₹${it.pricePerKg}/kg)" } ?: "Select Fish Type *",
+                                value = selectedProduct?.let { "${it.name} (₹${it.pricePerKg}/kg)" } ?: (if (strings.isHindi) "मछली का प्रकार चुनें *" else "Select Fish Type *"),
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Fish Variety / Species *") },
+                                label = { Text(strings.fishVarietyLabelText) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productDropdownExpanded) },
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
@@ -1034,22 +1035,22 @@ fun RecordFishSaleDialog(
                                 onClick = { isManualFishMode = true },
                                 contentPadding = PaddingValues(0.dp)
                             ) {
-                                Text("+ Type Other Fish Species", style = MaterialTheme.typography.labelSmall)
+                                Text(if (strings.isHindi) "+ अन्य मछली किस्म टाइप करें" else "+ Type Other Fish Species", style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     } else {
                         OutlinedTextField(
                             value = manualFishName,
                             onValueChange = { manualFishName = it },
-                            label = { Text("Fish Species / Name *") },
-                            placeholder = { Text("e.g. Rohu Fish, Catla, Tilapia") },
+                            label = { Text(strings.fishSpeciesNameLabelText) },
+                            placeholder = { Text(strings.itemNamePlaceholderText) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
                         )
                         if (products.isNotEmpty()) {
                             TextButton(onClick = { isManualFishMode = false }) {
-                                Text("Choose from Fish Species List", style = MaterialTheme.typography.labelSmall)
+                                Text(if (strings.isHindi) "मछली सूची से चुनें" else "Choose from Fish Species List", style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -1064,7 +1065,7 @@ fun RecordFishSaleDialog(
                         OutlinedTextField(
                             value = weightInput,
                             onValueChange = { weightInput = it },
-                            label = { Text("Weight (kg) *") },
+                            label = { Text(strings.weightLabel) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
@@ -1074,7 +1075,7 @@ fun RecordFishSaleDialog(
                         OutlinedTextField(
                             value = piecesInput,
                             onValueChange = { piecesInput = it },
-                            label = { Text("Pieces") },
+                            label = { Text(strings.piecesLabel) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
@@ -1092,7 +1093,7 @@ fun RecordFishSaleDialog(
                         OutlinedTextField(
                             value = rateInput,
                             onValueChange = { rateInput = it },
-                            label = { Text("Rate (₹/kg) *") },
+                            label = { Text(if (strings.isHindi) "दर (₹/किग्रा) *" else "Rate (₹/kg) *") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
@@ -1102,7 +1103,7 @@ fun RecordFishSaleDialog(
                         OutlinedTextField(
                             value = saleDate,
                             onValueChange = { saleDate = it },
-                            label = { Text("Date") },
+                            label = { Text(strings.dateLabel) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.weight(1f).testTag("pond_sale_date_input")
@@ -1125,7 +1126,7 @@ fun RecordFishSaleDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Total Bill Amount:",
+                                text = if (strings.isHindi) "कुल बिल राशि:" else "Total Bill Amount:",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1177,12 +1178,12 @@ fun RecordFishSaleDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
                 modifier = Modifier.testTag("save_pond_sale_btn")
             ) {
-                Text("Save Sale Record")
+                Text(strings.saveSaleRecordButton)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(strings.cancelButton)
             }
         }
     )

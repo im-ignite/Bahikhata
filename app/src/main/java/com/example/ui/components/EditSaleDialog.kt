@@ -45,6 +45,7 @@ import com.example.data.model.ProductItem
 import com.example.data.model.SaleTransaction
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.TealPrimary
+import com.example.ui.util.LocalAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,6 +56,7 @@ fun EditSaleDialog(
     onDismiss: () -> Unit,
     onConfirm: (SaleTransaction) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var customerName by remember { mutableStateOf(sale.customerName) }
     var selectedCustomerId by remember { mutableStateOf(sale.customerId) }
     var itemName by remember { mutableStateOf(sale.itemName) }
@@ -84,7 +86,7 @@ fun EditSaleDialog(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Edit Sale Record",
+                    text = strings.editSaleRecordTitle,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -95,7 +97,7 @@ fun EditSaleDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Modify sale metrics, client details, weight, and price in Rupees (₹).",
+                    text = if (strings.isHindi) "बिक्री मेट्रिक्स, ग्राहक विवरण, वजन और मूल्य (₹) संशोधित करें।" else "Modify sale metrics, client details, weight, and price in Rupees (₹).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -112,7 +114,7 @@ fun EditSaleDialog(
                                 customerName = it
                                 selectedCustomerId = null
                             },
-                            label = { Text("Client / Customer Name *") },
+                            label = { Text(strings.clientNameLabel) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = customerDropdownExpanded) },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
@@ -141,7 +143,7 @@ fun EditSaleDialog(
                     OutlinedTextField(
                         value = customerName,
                         onValueChange = { customerName = it },
-                        label = { Text("Client / Customer Name *") },
+                        label = { Text(strings.clientNameLabel) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
@@ -162,7 +164,7 @@ fun EditSaleDialog(
                                 itemName = it
                                 selectedProductId = null
                             },
-                            label = { Text("Item / Commodity *") },
+                            label = { Text(strings.itemCommodityLabel) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = productDropdownExpanded) },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
@@ -192,7 +194,7 @@ fun EditSaleDialog(
                     OutlinedTextField(
                         value = itemName,
                         onValueChange = { itemName = it },
-                        label = { Text("Item Name *") },
+                        label = { Text(strings.itemCommodityLabel) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
@@ -209,7 +211,7 @@ fun EditSaleDialog(
                     OutlinedTextField(
                         value = piecesText,
                         onValueChange = { piecesText = it },
-                        label = { Text("Pieces *") },
+                        label = { Text(strings.piecesLabel) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -221,7 +223,7 @@ fun EditSaleDialog(
                     OutlinedTextField(
                         value = weightText,
                         onValueChange = { weightText = it },
-                        label = { Text("Weight (kg) *") },
+                        label = { Text(strings.weightLabel) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -235,7 +237,7 @@ fun EditSaleDialog(
                 OutlinedTextField(
                     value = pricePerKgText,
                     onValueChange = { pricePerKgText = it },
-                    label = { Text("Price per kg (₹ / kg) *") },
+                    label = { Text(strings.pricePerKgLabel) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -248,7 +250,7 @@ fun EditSaleDialog(
                 OutlinedTextField(
                     value = dateString,
                     onValueChange = { dateString = it },
-                    label = { Text("Date (YYYY-MM-DD)") },
+                    label = { Text(strings.dateLabel) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
@@ -259,7 +261,7 @@ fun EditSaleDialog(
                 OutlinedTextField(
                     value = amountPaidText,
                     onValueChange = { amountPaidText = it },
-                    label = { Text("Amount Paid (₹) / जमा राशि") },
+                    label = { Text(strings.amountPaidLabelText) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -283,12 +285,12 @@ fun EditSaleDialog(
                     ) {
                         Column {
                             Text(
-                                text = "Auto Price (${String.format("%.2f", inputWeight)} kg × ₹${String.format("%.2f", inputPricePerKg)}):",
+                                text = if (strings.isHindi) "स्वचालित मूल्य (${String.format("%.2f", inputWeight)} किग्रा × ₹${String.format("%.2f", inputPricePerKg)}):" else "Auto Price (${String.format("%.2f", inputWeight)} kg × ₹${String.format("%.2f", inputPricePerKg)}):",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "Updated Total:",
+                                text = if (strings.isHindi) "अपडेटेड कुल मूल्य:" else "Updated Total:",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -337,7 +339,7 @@ fun EditSaleDialog(
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.testTag("confirm_edit_sale_btn")
             ) {
-                Text("Update Sale")
+                Text(strings.updateSaleButton)
             }
         },
         dismissButton = {
@@ -345,7 +347,7 @@ fun EditSaleDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("cancel_edit_sale_btn")
             ) {
-                Text("Cancel")
+                Text(strings.cancelButton)
             }
         }
     )
