@@ -47,7 +47,8 @@ data class ClientSalesSummary(
     val totalPieces: Int,
     val totalAmount: Double,
     val itemsSummary: String,
-    val salesCount: Int
+    val salesCount: Int,
+    val transactions: List<SaleTransaction> = emptyList()
 )
 
 data class DailyChartPoint(
@@ -494,7 +495,8 @@ class TradeViewModel(
                 totalPieces = cPieces,
                 totalAmount = cTotal,
                 itemsSummary = itemsStr,
-                salesCount = clientSales.size
+                salesCount = clientSales.size,
+                transactions = clientSales
             )
         }.sortedByDescending { it.totalAmount }
 

@@ -457,36 +457,6 @@ fun ProductCatalogCard(
                         color = AmberAccent
                     )
                 }
-
-                // Pieces in stock
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(CyanSecondary.copy(alpha = 0.12f))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    Text(
-                        text = "${product.stockPieces} pcs in stock",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = CyanSecondary
-                    )
-                }
-
-                // Weight in stock
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(TealPrimary.copy(alpha = 0.12f))
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
-                ) {
-                    Text(
-                        text = "${String.format("%.1f", product.stockWeightKg)} kg in stock",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = TealPrimary
-                    )
-                }
             }
         }
     }
@@ -545,6 +515,7 @@ fun AddEditProductDialog(
                     modifier = Modifier.fillMaxWidth().testTag("product_price_per_kg_input")
                 )
 
+                /* 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -569,6 +540,7 @@ fun AddEditProductDialog(
                         modifier = Modifier.weight(1f).testTag("product_stock_weight_input")
                     )
                 }
+                */
 
                 OutlinedTextField(
                     value = category,
