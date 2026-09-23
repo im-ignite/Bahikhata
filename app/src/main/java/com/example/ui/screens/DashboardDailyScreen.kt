@@ -824,6 +824,7 @@ fun RecordFishSaleDialog(
 ) {
     var selectedCustomer by remember { mutableStateOf(customers.firstOrNull()) }
     var isNewCustomerMode by remember { mutableStateOf(customers.isEmpty()) }
+    var isRegularCustomerMode by remember { mutableStateOf(false) }
     var manualCustomerName by remember { mutableStateOf("") }
     var manualCustomerPhone by remember { mutableStateOf("") }
     var customerDropdownExpanded by remember { mutableStateOf(false) }
@@ -847,7 +848,7 @@ fun RecordFishSaleDialog(
     val inputRate = rateInput.toDoubleOrNull() ?: 0.0
     val calculatedTotal = inputWeight * inputRate
 
-    val canSubmit = (selectedCustomer != null || manualCustomerName.isNotBlank()) &&
+    val canSubmit = (selectedCustomer != null || manualCustomerName.isNotBlank() || isRegularCustomerMode) &&
             (selectedProduct != null || manualFishName.isNotBlank()) &&
             inputWeight > 0.0 &&
             inputRate > 0.0
@@ -872,7 +873,26 @@ fun RecordFishSaleDialog(
             ) {
                 // Customer Selector
                 item {
-                    if (!isNewCustomerMode && customers.isNotEmpty()) {
+                    if (isRegularCustomerMode) {
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Retail / Regular Customer", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                    TextButton(onClick = { isRegularCustomerMode = false; isNewCustomerMode = false }) {
+                                        Text("Change", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                                Text("No name or phone required. Sale will be recorded under 'Regular Customer'.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    } else if (!isNewCustomerMode && customers.isNotEmpty()) {
                         ExposedDropdownMenuBox(
                             expanded = customerDropdownExpanded,
                             onExpandedChange = { customerDropdownExpanded = !customerDropdownExpanded }
@@ -908,10 +928,18 @@ fun RecordFishSaleDialog(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             TextButton(
-                                onClick = { isNewCustomerMode = true },
+                                onClick = { isRegularCustomerMode = true; isNewCustomerMode = false },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Icon(imageVector = Icons.Default.Person, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Regular Customer", style = MaterialTheme.typography.labelSmall)
+                            }
+                            TextButton(
+                                onClick = { isNewCustomerMode = true; isRegularCustomerMode = false },
                                 contentPadding = PaddingValues(0.dp)
                             ) {
                                 Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -932,7 +960,7 @@ fun RecordFishSaleDialog(
                                 ) {
                                     Text("New Client Info", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                                     if (customers.isNotEmpty()) {
-                                        TextButton(onClick = { isNewCustomerMode = false }) {
+                                        TextButton(onClick = { isNewCustomerMode = false; isRegularCustomerMode = false }) {
                                             Text("Pick Existing", style = MaterialTheme.typography.labelSmall)
                                         }
                                     }
@@ -1115,7 +1143,9 @@ fun RecordFishSaleDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val finalCustName = if (isNewCustomerMode || selectedCustomer == null) {
+                    val finalCustName = if (isRegularCustomerMode) {
+                        "Regular Customer"
+                    } else if (isNewCustomerMode || selectedCustomer == null) {
                         manualCustomerName.trim()
                     } else {
                         selectedCustomer!!.name
@@ -1127,12 +1157,12 @@ fun RecordFishSaleDialog(
                         selectedProduct!!.name
                     }
 
-                    if (isNewCustomerMode && manualCustomerName.isNotBlank()) {
+                    if (isNewCustomerMode && manualCustomerName.isNotBlank() && !isRegularCustomerMode) {
                         onAddNewCustomer(manualCustomerName.trim(), manualCustomerPhone.trim(), "", "")
                     }
 
                     onConfirm(
-                        if (isNewCustomerMode) null else selectedCustomer?.id,
+                        if (isNewCustomerMode || isRegularCustomerMode) null else selectedCustomer?.id,
                         finalCustName,
                         if (isManualFishMode) null else selectedProduct?.id,
                         finalFishName,

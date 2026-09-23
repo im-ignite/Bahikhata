@@ -1,6 +1,5 @@
 {
   "name": "RAI FISH",
   "description": "Fish pond sales records, client sales history by date, weight-based pricing, and sales analytics for direct-to-client fish selling.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "requestFramePermissions": []
 }

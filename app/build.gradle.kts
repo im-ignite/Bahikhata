@@ -100,7 +100,6 @@ dependencies {
   implementation(libs.androidx.room.runtime)
   // implementation(libs.coil.compose)
   implementation(libs.converter.moshi)
-  implementation(libs.firebase.ai)
   // Enabled for Cloud Sync, Firestore, and Google Sign-In via Credential Manager:
   implementation(libs.firebase.firestore)
   implementation(libs.firebase.auth)
