@@ -372,12 +372,66 @@ fun ReportsScreen(
 
         // 3. Summary Metric Grid (Fish sales metrics)
         item {
-            SummaryMetricsGrid(
-                totalWeightKg = metrics.totalWeightKg,
-                totalPieces = metrics.totalPieces,
-                totalSalesAmount = metrics.totalSalesAmount,
-                transactionCount = metrics.totalTransactions
-            )
+            var isMetricsExpanded by remember { mutableStateOf(false) }
+            Column(modifier = Modifier.fillMaxWidth()) {
+                SummaryMetricsGrid(
+                    totalWeightKg = metrics.totalWeightKg,
+                    totalPieces = metrics.totalPieces,
+                    totalSalesAmount = metrics.totalSalesAmount,
+                    transactionCount = metrics.totalTransactions,
+                    modifier = Modifier.clickable { isMetricsExpanded = !isMetricsExpanded }
+                )
+                
+                if (isMetricsExpanded) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Detailed Overview",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            
+                            metrics.filteredSales.forEach { sale ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "${sale.itemName} -> ${sale.customerName}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = "${sale.dateString} | ${sale.weightKg} kg | ${sale.pieces} pcs",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Text(
+                                        text = "₹${String.format("%.2f", sale.totalPrice)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AmberAccent
+                                    )
+                                }
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // 4. Client-Wise Sales Breakdown (User specifically asked: "to whom which clients")
