@@ -372,17 +372,20 @@ fun ReportsScreen(
 
         // 3. Summary Metric Grid (Fish sales metrics)
         item {
-            var isMetricsExpanded by remember { mutableStateOf(false) }
+            var expandedMetric by remember { mutableStateOf<String?>(null) }
             Column(modifier = Modifier.fillMaxWidth()) {
                 SummaryMetricsGrid(
                     totalWeightKg = metrics.totalWeightKg,
                     totalPieces = metrics.totalPieces,
                     totalSalesAmount = metrics.totalSalesAmount,
                     transactionCount = metrics.totalTransactions,
-                    modifier = Modifier.clickable { isMetricsExpanded = !isMetricsExpanded }
+                    onWeightClick = { expandedMetric = if (expandedMetric == "weight") null else "weight" },
+                    onPiecesClick = { expandedMetric = if (expandedMetric == "pieces") null else "pieces" },
+                    onSalesClick = { expandedMetric = if (expandedMetric == "sales") null else "sales" },
+                    onOrdersClick = { expandedMetric = if (expandedMetric == "orders") null else "orders" }
                 )
                 
-                if (isMetricsExpanded) {
+                if (expandedMetric != null) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -393,15 +396,30 @@ fun ReportsScreen(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            val title = when (expandedMetric) {
+                                "weight" -> "Weight Breakdown"
+                                "pieces" -> "Fish Pieces Breakdown"
+                                "sales" -> "Sales Revenue Breakdown"
+                                "orders" -> "Orders Overview"
+                                else -> "Detailed Overview"
+                            }
                             Text(
-                                text = "Detailed Overview",
+                                text = title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             
-                            metrics.filteredSales.forEach { sale ->
+                            // Grouping by item name so user sees "which fish, how many pieces/weight"
+                            val groupedByFish = metrics.filteredSales.groupBy { it.itemName }
+                            
+                            groupedByFish.forEach { (fishName, salesList) ->
+                                val totalFishWeight = salesList.sumOf { it.weightKg }
+                                val totalFishPieces = salesList.sumOf { it.pieces }
+                                val totalFishSales = salesList.sumOf { it.totalPrice }
+                                val orderCount = salesList.size
+                                
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -409,22 +427,25 @@ fun ReportsScreen(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "${sale.itemName} -> ${sale.customerName}",
+                                            text = fishName,
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = FontWeight.SemiBold
                                         )
+                                        
+                                        val subtext = when (expandedMetric) {
+                                            "weight" -> "$totalFishWeight kg total"
+                                            "pieces" -> "$totalFishPieces pieces total"
+                                            "sales" -> "₹${String.format("%.2f", totalFishSales)} revenue"
+                                            "orders" -> "$orderCount orders"
+                                            else -> ""
+                                        }
+                                        
                                         Text(
-                                            text = "${sale.dateString} | ${sale.weightKg} kg | ${sale.pieces} pcs",
+                                            text = subtext,
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                    Text(
-                                        text = "₹${String.format("%.2f", sale.totalPrice)}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = AmberAccent
-                                    )
                                 }
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                             }

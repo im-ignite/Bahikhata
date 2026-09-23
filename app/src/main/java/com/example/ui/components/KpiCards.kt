@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -112,6 +113,10 @@ fun SummaryMetricsGrid(
     totalPieces: Int,
     totalSalesAmount: Double,
     transactionCount: Int,
+    onWeightClick: () -> Unit = {},
+    onPiecesClick: () -> Unit = {},
+    onSalesClick: () -> Unit = {},
+    onOrdersClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -126,7 +131,7 @@ fun SummaryMetricsGrid(
                 icon = Icons.Default.FitnessCenter,
                 iconTint = TealPrimary,
                 iconBg = TealPrimary.copy(alpha = 0.12f),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).clickable { onWeightClick() }
             )
 
             MetricStatCard(
@@ -136,7 +141,7 @@ fun SummaryMetricsGrid(
                 icon = Icons.Default.Inventory2,
                 iconTint = CyanSecondary,
                 iconBg = CyanSecondary.copy(alpha = 0.12f),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).clickable { onPiecesClick() }
             )
         }
 
@@ -151,7 +156,7 @@ fun SummaryMetricsGrid(
                 icon = Icons.Default.AttachMoney,
                 iconTint = AmberAccent,
                 iconBg = AmberAccent.copy(alpha = 0.12f),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).clickable { onSalesClick() }
             )
 
             MetricStatCard(
@@ -161,7 +166,7 @@ fun SummaryMetricsGrid(
                 icon = Icons.Default.Receipt,
                 iconTint = SuccessGreen,
                 iconBg = SuccessGreen.copy(alpha = 0.12f),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).clickable { onOrdersClick() }
             )
         }
     }
