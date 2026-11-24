@@ -17,6 +17,9 @@ interface DailyBatchDao {
     @Query("SELECT * FROM daily_batches WHERE isDeleted = 0 ORDER BY timestamp DESC")
     suspend fun getAllBatchesList(): List<DailyBatchEntry>
 
+    @Query("SELECT * FROM daily_batches ORDER BY timestamp DESC")
+    suspend fun getAllBatchesIncludingDeletedList(): List<DailyBatchEntry>
+
     @Query("SELECT * FROM daily_batches WHERE isDeleted = 1 ORDER BY timestamp DESC")
     fun getDeletedBatches(): Flow<List<DailyBatchEntry>>
 

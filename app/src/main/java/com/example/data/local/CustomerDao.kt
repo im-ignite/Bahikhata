@@ -17,6 +17,9 @@ interface CustomerDao {
     @Query("SELECT * FROM customers WHERE isDeleted = 0 ORDER BY name ASC")
     suspend fun getAllCustomersList(): List<Customer>
 
+    @Query("SELECT * FROM customers ORDER BY name ASC")
+    suspend fun getAllCustomersIncludingDeletedList(): List<Customer>
+
     @Query("SELECT * FROM customers WHERE isDeleted = 1 ORDER BY name ASC")
     fun getDeletedCustomers(): Flow<List<Customer>>
 

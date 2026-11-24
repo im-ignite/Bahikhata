@@ -17,6 +17,9 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE isDeleted = 0 ORDER BY name ASC")
     suspend fun getAllProductsList(): List<ProductItem>
 
+    @Query("SELECT * FROM products ORDER BY name ASC")
+    suspend fun getAllProductsIncludingDeletedList(): List<ProductItem>
+
     @Query("SELECT * FROM products WHERE isDeleted = 1 ORDER BY name ASC")
     fun getDeletedProducts(): Flow<List<ProductItem>>
 

@@ -445,11 +445,11 @@ class TradeRepository(
             }
 
             // 2. Fetch combined local records
-            val currentProducts = productDao.getAllProductsList()
-            val currentCustomers = customerDao.getAllCustomersList()
-            val currentBatches = batchDao.getAllBatchesList()
-            val currentSales = saleDao.getAllSalesList()
-            val currentPayments = paymentDao.getAllPaymentsList()
+            val currentProducts = productDao.getAllProductsIncludingDeletedList()
+            val currentCustomers = customerDao.getAllCustomersIncludingDeletedList()
+            val currentBatches = batchDao.getAllBatchesIncludingDeletedList()
+            val currentSales = saleDao.getAllSalesIncludingDeletedList()
+            val currentPayments = paymentDao.getAllPaymentsIncludingDeletedList()
 
             // 3. Upload combined records to Cloud
             val success = cloudDataStore.uploadToCloud(

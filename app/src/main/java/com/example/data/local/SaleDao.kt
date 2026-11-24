@@ -17,6 +17,9 @@ interface SaleDao {
     @Query("SELECT * FROM sales WHERE isDeleted = 0 ORDER BY timestamp DESC")
     suspend fun getAllSalesList(): List<SaleTransaction>
 
+    @Query("SELECT * FROM sales ORDER BY timestamp DESC")
+    suspend fun getAllSalesIncludingDeletedList(): List<SaleTransaction>
+
     @Query("SELECT * FROM sales WHERE isDeleted = 1 ORDER BY timestamp DESC")
     fun getDeletedSales(): Flow<List<SaleTransaction>>
 
