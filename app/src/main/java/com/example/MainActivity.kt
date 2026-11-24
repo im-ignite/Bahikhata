@@ -230,14 +230,6 @@ fun MainAppScreen(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotifPermission) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
-        if (!googleAccount.isLinked) {
-            val devAccounts = viewModel.getDeviceGoogleAccounts()
-            if (devAccounts.isNotEmpty()) {
-                viewModel.signInWithGoogleAccount(devAccounts.first())
-            } else {
-                doGoogleSignIn()
-            }
-        }
     }
 
     CompositionLocalProvider(
