@@ -99,7 +99,8 @@ class CloudDataStore(private val context: Context) {
                                 "stockWeightKg" to p.stockWeightKg,
                                 "unit" to p.unit,
                                 "category" to p.category,
-                                "lastUpdated" to p.lastUpdated
+                                "lastUpdated" to p.lastUpdated,
+                                "isDeleted" to p.isDeleted
                             )
                         ).await()
                 }
@@ -113,7 +114,8 @@ class CloudDataStore(private val context: Context) {
                                 "phoneNumber" to c.phoneNumber,
                                 "address" to c.address,
                                 "notes" to c.notes,
-                                "createdAt" to c.createdAt
+                                "createdAt" to c.createdAt,
+                                "isDeleted" to c.isDeleted
                             )
                         ).await()
                 }
@@ -134,7 +136,8 @@ class CloudDataStore(private val context: Context) {
                                 "amountPaid" to s.amountPaid,
                                 "dateString" to s.dateString,
                                 "timestamp" to s.timestamp,
-                                "isSynced" to true
+                                "isSynced" to true,
+                                "isDeleted" to s.isDeleted
                             )
                         ).await()
                 }
@@ -150,7 +153,8 @@ class CloudDataStore(private val context: Context) {
                                 "pieces" to b.pieces,
                                 "weightKg" to b.weightKg,
                                 "notes" to b.notes,
-                                "isSynced" to true
+                                "isSynced" to true,
+                                "isDeleted" to b.isDeleted
                             )
                         ).await()
                 }
@@ -227,7 +231,8 @@ class CloudDataStore(private val context: Context) {
                             stockWeightKg = d.getDouble("stockWeightKg") ?: 0.0,
                             unit = d.getString("unit") ?: "kg",
                             category = d.getString("category") ?: "General",
-                            lastUpdated = d.getLong("lastUpdated") ?: System.currentTimeMillis()
+                            lastUpdated = d.getLong("lastUpdated") ?: System.currentTimeMillis(),
+                            isDeleted = d.getBoolean("isDeleted") ?: false
                         )
                     } catch (e: Exception) { null }
                 }
@@ -241,7 +246,8 @@ class CloudDataStore(private val context: Context) {
                             phoneNumber = d.getString("phoneNumber") ?: "",
                             address = d.getString("address") ?: "",
                             notes = d.getString("notes") ?: "",
-                            createdAt = d.getLong("createdAt") ?: System.currentTimeMillis()
+                            createdAt = d.getLong("createdAt") ?: System.currentTimeMillis(),
+                            isDeleted = d.getBoolean("isDeleted") ?: false
                         )
                     } catch (e: Exception) { null }
                 }
@@ -257,7 +263,8 @@ class CloudDataStore(private val context: Context) {
                             pieces = d.getLong("pieces")?.toInt() ?: 0,
                             weightKg = d.getDouble("weightKg") ?: 0.0,
                             notes = d.getString("notes") ?: "",
-                            isSynced = true
+                            isSynced = true,
+                            isDeleted = d.getBoolean("isDeleted") ?: false
                         )
                     } catch (e: Exception) { null }
                 }
@@ -278,7 +285,8 @@ class CloudDataStore(private val context: Context) {
                             amountPaid = d.getDouble("amountPaid") ?: 0.0,
                             dateString = d.getString("dateString") ?: "",
                             timestamp = d.getLong("timestamp") ?: System.currentTimeMillis(),
-                            isSynced = true
+                            isSynced = true,
+                            isDeleted = d.getBoolean("isDeleted") ?: false
                         )
                     } catch (e: Exception) { null }
                 }
@@ -332,6 +340,7 @@ class CloudDataStore(private val context: Context) {
             obj.put("unit", p.unit)
             obj.put("category", p.category)
             obj.put("lastUpdated", p.lastUpdated)
+            obj.put("isDeleted", p.isDeleted)
             productsArray.put(obj)
         }
         root.put("products", productsArray)
@@ -345,6 +354,7 @@ class CloudDataStore(private val context: Context) {
             obj.put("address", c.address)
             obj.put("notes", c.notes)
             obj.put("createdAt", c.createdAt)
+            obj.put("isDeleted", c.isDeleted)
             customersArray.put(obj)
         }
         root.put("customers", customersArray)
@@ -359,6 +369,7 @@ class CloudDataStore(private val context: Context) {
             obj.put("pieces", b.pieces)
             obj.put("weightKg", b.weightKg)
             obj.put("notes", b.notes)
+            obj.put("isDeleted", b.isDeleted)
             batchesArray.put(obj)
         }
         root.put("batches", batchesArray)
@@ -377,6 +388,7 @@ class CloudDataStore(private val context: Context) {
             obj.put("totalPrice", s.totalPrice)
             obj.put("dateString", s.dateString)
             obj.put("timestamp", s.timestamp)
+            obj.put("isDeleted", s.isDeleted)
             salesArray.put(obj)
         }
         root.put("sales", salesArray)
@@ -389,6 +401,7 @@ class CloudDataStore(private val context: Context) {
             obj.put("amountPaid", p.amountPaid)
             obj.put("dateString", p.dateString)
             obj.put("timestamp", p.timestamp)
+            obj.put("isDeleted", p.isDeleted)
             paymentsArray.put(obj)
         }
         root.put("payments", paymentsArray)
@@ -415,7 +428,8 @@ class CloudDataStore(private val context: Context) {
                             stockWeightKg = obj.optDouble("stockWeightKg", 0.0),
                             unit = obj.optString("unit", "kg"),
                             category = obj.optString("category", "General"),
-                            lastUpdated = obj.optLong("lastUpdated", System.currentTimeMillis())
+                            lastUpdated = obj.optLong("lastUpdated", System.currentTimeMillis()),
+                            isDeleted = obj.optBoolean("isDeleted", false)
                         )
                     )
                 }
@@ -433,7 +447,8 @@ class CloudDataStore(private val context: Context) {
                             phoneNumber = obj.optString("phoneNumber", ""),
                             address = obj.optString("address", ""),
                             notes = obj.optString("notes", ""),
-                            createdAt = obj.optLong("createdAt", System.currentTimeMillis())
+                            createdAt = obj.optLong("createdAt", System.currentTimeMillis()),
+                            isDeleted = obj.optBoolean("isDeleted", false)
                         )
                     )
                 }
@@ -453,7 +468,8 @@ class CloudDataStore(private val context: Context) {
                             pieces = obj.optInt("pieces", 0),
                             weightKg = obj.optDouble("weightKg", 0.0),
                             notes = obj.optString("notes", ""),
-                            isSynced = true
+                            isSynced = true,
+                            isDeleted = obj.optBoolean("isDeleted", false)
                         )
                     )
                 }
@@ -478,7 +494,8 @@ class CloudDataStore(private val context: Context) {
                             amountPaid = obj.optDouble("amountPaid", 0.0),
                             dateString = obj.optString("dateString", ""),
                             timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
-                            isSynced = true
+                            isSynced = true,
+                            isDeleted = obj.optBoolean("isDeleted", false)
                         )
                     )
                 }
@@ -495,7 +512,8 @@ class CloudDataStore(private val context: Context) {
                             customerId = obj.optLong("customerId", 0L),
                             amountPaid = obj.optDouble("amountPaid", 0.0),
                             dateString = obj.optString("dateString", ""),
-                            timestamp = obj.optLong("timestamp", System.currentTimeMillis())
+                            timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
+                            isDeleted = obj.optBoolean("isDeleted", false)
                         )
                     )
                 }
@@ -530,7 +548,8 @@ class CloudDataStore(private val context: Context) {
                         "stockWeightKg" to product.stockWeightKg,
                         "unit" to product.unit,
                         "category" to product.category,
-                        "lastUpdated" to product.lastUpdated
+                        "lastUpdated" to product.lastUpdated,
+                        "isDeleted" to product.isDeleted
                     ),
                     SetOptions.merge()
                 ).await()
@@ -563,7 +582,8 @@ class CloudDataStore(private val context: Context) {
                         "phoneNumber" to customer.phoneNumber,
                         "address" to customer.address,
                         "notes" to customer.notes,
-                        "createdAt" to customer.createdAt
+                        "createdAt" to customer.createdAt,
+                        "isDeleted" to customer.isDeleted
                     ),
                     SetOptions.merge()
                 ).await()
@@ -598,7 +618,8 @@ class CloudDataStore(private val context: Context) {
                         "pieces" to batch.pieces,
                         "weightKg" to batch.weightKg,
                         "notes" to batch.notes,
-                        "isSynced" to true
+                        "isSynced" to true,
+                        "isDeleted" to batch.isDeleted
                     ),
                     SetOptions.merge()
                 ).await()
@@ -638,7 +659,8 @@ class CloudDataStore(private val context: Context) {
                         "amountPaid" to sale.amountPaid,
                         "dateString" to sale.dateString,
                         "timestamp" to sale.timestamp,
-                        "isSynced" to true
+                        "isSynced" to true,
+                        "isDeleted" to sale.isDeleted
                     ),
                     SetOptions.merge()
                 ).await()
