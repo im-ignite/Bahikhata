@@ -18,7 +18,7 @@ interface PaymentDao {
     @Query("SELECT * FROM payment_transactions WHERE isDeleted = 0")
     suspend fun getAllPaymentsList(): List<PaymentTransaction>
 
-    @Query("SELECT * FROM payments ORDER BY timestamp DESC")
+    @Query("SELECT * FROM payment_transactions ORDER BY timestamp DESC")
     suspend fun getAllPaymentsIncludingDeletedList(): List<PaymentTransaction>
 
     @Query("SELECT * FROM payment_transactions WHERE isDeleted = 1 ORDER BY timestamp DESC")
