@@ -10,5 +10,6 @@ data class PaymentTransaction(
     val customerId: Long,
     val amountPaid: Double,
     val dateString: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false
 )

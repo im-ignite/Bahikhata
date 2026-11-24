@@ -11,16 +11,19 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SaleDao {
-    @Query("SELECT * FROM sales ORDER BY timestamp DESC")
+    @Query("SELECT * FROM sales WHERE isDeleted = 0 ORDER BY timestamp DESC")
     fun getAllSales(): Flow<List<SaleTransaction>>
 
-    @Query("SELECT * FROM sales ORDER BY timestamp DESC")
+    @Query("SELECT * FROM sales WHERE isDeleted = 0 ORDER BY timestamp DESC")
     suspend fun getAllSalesList(): List<SaleTransaction>
 
-    @Query("SELECT * FROM sales WHERE customerId = :customerId ORDER BY timestamp DESC")
+    @Query("SELECT * FROM sales WHERE isDeleted = 1 ORDER BY timestamp DESC")
+    fun getDeletedSales(): Flow<List<SaleTransaction>>
+
+    @Query("SELECT * FROM sales WHERE customerId = :customerId AND isDeleted = 0 ORDER BY timestamp DESC")
     fun getSalesForCustomer(customerId: Long): Flow<List<SaleTransaction>>
 
-    @Query("SELECT * FROM sales WHERE dateString >= :startDate AND dateString <= :endDate ORDER BY dateString ASC, timestamp ASC")
+    @Query("SELECT * FROM sales WHERE dateString >= :startDate AND dateString <= :endDate AND isDeleted = 0 ORDER BY dateString ASC, timestamp ASC")
     fun getSalesBetween(startDate: String, endDate: String): Flow<List<SaleTransaction>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

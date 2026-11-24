@@ -106,6 +106,7 @@ import com.example.ui.screens.CustomersScreen
 import com.example.ui.screens.DashboardDailyScreen
 import com.example.ui.screens.ReportsScreen
 import com.example.ui.screens.SalesScreen
+import com.example.ui.screens.DeletedRecordsScreen
 import com.example.ui.theme.AmberAccent
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.SuccessGreen
@@ -506,6 +507,18 @@ fun MainAppScreen(
                         getPaymentsForCustomer = { customerId ->
                             viewModel.getPaymentsForCustomer(customerId)
                         }
+                    )
+                    
+                    5 -> DeletedRecordsScreen(
+                        deletedCustomersFlow = viewModel.deletedCustomers,
+                        deletedProductsFlow = viewModel.deletedProducts,
+                        deletedSalesFlow = viewModel.deletedSales,
+                        deletedBatchesFlow = viewModel.deletedBatches,
+                        onRestoreCustomer = { viewModel.restoreCustomer(it) },
+                        onRestoreProduct = { viewModel.restoreProduct(it) },
+                        onRestoreSale = { viewModel.restoreSale(it) },
+                        onRestoreBatch = { viewModel.restoreBatch(it) },
+                        onBack = { viewModel.setActiveTab(3) } // Go back to Reports
                     )
                 }
             }

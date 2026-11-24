@@ -27,7 +27,7 @@ import java.util.Date
 import java.util.Locale
 
 class TradeRepository(
-    private val database: AppDatabase,
+    val database: AppDatabase,
     private val notificationHelper: NotificationHelper,
     private val context: Context
 ) {
@@ -119,10 +119,21 @@ class TradeRepository(
     }
 
     suspend fun deleteBatch(entry: DailyBatchEntry) = withContext(Dispatchers.IO) {
-        batchDao.deleteBatch(entry)
+        val deletedEntry = entry.copy(isDeleted = true)
+        batchDao.updateBatch(deletedEntry)
         val account = authManager.accountInfo.value
         if (account.isLinked) {
-            cloudDataStore.deleteBatchFromCloud(account.email, entry.id)
+            cloudDataStore.saveBatchToCloud(account.email, deletedEntry)
+        }
+        autoSyncIfEnabled()
+    }
+
+    suspend fun restoreBatch(entry: DailyBatchEntry) = withContext(Dispatchers.IO) {
+        val restoredEntry = entry.copy(isDeleted = false)
+        batchDao.updateBatch(restoredEntry)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveBatchToCloud(account.email, restoredEntry)
         }
         autoSyncIfEnabled()
     }
@@ -160,10 +171,21 @@ class TradeRepository(
     }
 
     suspend fun deleteProduct(product: ProductItem) = withContext(Dispatchers.IO) {
-        productDao.deleteProduct(product)
+        val deletedProduct = product.copy(isDeleted = true)
+        productDao.updateProduct(deletedProduct)
         val account = authManager.accountInfo.value
         if (account.isLinked) {
-            cloudDataStore.deleteProductFromCloud(account.email, product.id)
+            cloudDataStore.saveProductToCloud(account.email, deletedProduct)
+        }
+        autoSyncIfEnabled()
+    }
+
+    suspend fun restoreProduct(product: ProductItem) = withContext(Dispatchers.IO) {
+        val restoredProduct = product.copy(isDeleted = false)
+        productDao.updateProduct(restoredProduct)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveProductToCloud(account.email, restoredProduct)
         }
         autoSyncIfEnabled()
     }
@@ -200,10 +222,21 @@ class TradeRepository(
     }
 
     suspend fun deleteCustomer(customer: Customer) = withContext(Dispatchers.IO) {
-        customerDao.deleteCustomer(customer)
+        val deletedCustomer = customer.copy(isDeleted = true)
+        customerDao.updateCustomer(deletedCustomer)
         val account = authManager.accountInfo.value
         if (account.isLinked) {
-            cloudDataStore.deleteCustomerFromCloud(account.email, customer.id)
+            cloudDataStore.saveCustomerToCloud(account.email, deletedCustomer)
+        }
+        autoSyncIfEnabled()
+    }
+
+    suspend fun restoreCustomer(customer: Customer) = withContext(Dispatchers.IO) {
+        val restoredCustomer = customer.copy(isDeleted = false)
+        customerDao.updateCustomer(restoredCustomer)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveCustomerToCloud(account.email, restoredCustomer)
         }
         autoSyncIfEnabled()
     }
@@ -274,10 +307,21 @@ class TradeRepository(
     }
 
     suspend fun deleteSale(sale: SaleTransaction) = withContext(Dispatchers.IO) {
-        saleDao.deleteSale(sale)
+        val deletedSale = sale.copy(isDeleted = true)
+        saleDao.updateSale(deletedSale)
         val account = authManager.accountInfo.value
         if (account.isLinked) {
-            cloudDataStore.deleteSaleFromCloud(account.email, sale.id)
+            cloudDataStore.saveSaleToCloud(account.email, deletedSale)
+        }
+        autoSyncIfEnabled()
+    }
+
+    suspend fun restoreSale(sale: SaleTransaction) = withContext(Dispatchers.IO) {
+        val restoredSale = sale.copy(isDeleted = false)
+        saleDao.updateSale(restoredSale)
+        val account = authManager.accountInfo.value
+        if (account.isLinked) {
+            cloudDataStore.saveSaleToCloud(account.email, restoredSale)
         }
         autoSyncIfEnabled()
     }

@@ -11,11 +11,14 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CustomerDao {
-    @Query("SELECT * FROM customers ORDER BY name ASC")
+    @Query("SELECT * FROM customers WHERE isDeleted = 0 ORDER BY name ASC")
     fun getAllCustomers(): Flow<List<Customer>>
 
-    @Query("SELECT * FROM customers ORDER BY name ASC")
+    @Query("SELECT * FROM customers WHERE isDeleted = 0 ORDER BY name ASC")
     suspend fun getAllCustomersList(): List<Customer>
+
+    @Query("SELECT * FROM customers WHERE isDeleted = 1 ORDER BY name ASC")
+    fun getDeletedCustomers(): Flow<List<Customer>>
 
     @Query("SELECT * FROM customers WHERE id = :id")
     fun getCustomerById(id: Long): Flow<Customer?>

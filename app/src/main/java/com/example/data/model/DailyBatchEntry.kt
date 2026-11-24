@@ -14,5 +14,6 @@ data class DailyBatchEntry(
     val weightKg: Double,
     val notes: String = "",
     val isSynced: Boolean = false,
-    val cloudSyncTimestamp: Long? = null
+    val cloudSyncTimestamp: Long? = null,
+    val isDeleted: Boolean = false
 )

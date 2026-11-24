@@ -103,6 +103,16 @@ class TradeViewModel(
     val allSales: StateFlow<List<SaleTransaction>> = repository.allSales
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val deletedCustomers = repository.database.customerDao().getDeletedCustomers()
+    val deletedProducts = repository.database.productDao().getDeletedProducts()
+    val deletedSales = repository.database.saleDao().getDeletedSales()
+    val deletedBatches = repository.database.dailyBatchDao().getDeletedBatches()
+
+    fun restoreCustomer(c: Customer) { viewModelScope.launch { repository.restoreCustomer(c) } }
+    fun restoreProduct(p: ProductItem) { viewModelScope.launch { repository.restoreProduct(p) } }
+    fun restoreSale(s: SaleTransaction) { viewModelScope.launch { repository.restoreSale(s) } }
+    fun restoreBatch(b: DailyBatchEntry) { viewModelScope.launch { repository.restoreBatch(b) } }
+
     // Visual Reports combined flow (focused on fish sales to clients)
     val reportMetrics: StateFlow<VisualReportMetrics> = combine(
         allSales,

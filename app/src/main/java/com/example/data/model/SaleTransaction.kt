@@ -18,5 +18,6 @@ data class SaleTransaction(
     val dateString: String, // YYYY-MM-DD
     val amountPaid: Double = 0.0,
     val timestamp: Long = System.currentTimeMillis(),
-    val isSynced: Boolean = false
+    val isSynced: Boolean = false,
+    val isDeleted: Boolean = false
 )

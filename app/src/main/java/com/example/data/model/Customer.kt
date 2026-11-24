@@ -11,5 +11,6 @@ data class Customer(
     val phoneNumber: String,
     val address: String,
     val notes: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false
 )

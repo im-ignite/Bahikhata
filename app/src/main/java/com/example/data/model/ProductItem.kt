@@ -13,5 +13,6 @@ data class ProductItem(
     val stockWeightKg: Double = 0.0,
     val unit: String = "kg",
     val category: String = "General",
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastUpdated: Long = System.currentTimeMillis(),
+    val isDeleted: Boolean = false
 )

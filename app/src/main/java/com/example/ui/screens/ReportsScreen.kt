@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Event
@@ -88,6 +89,7 @@ fun ReportsScreen(
     specificSearchDate: String = "",
     onSearchSpecificDate: (String) -> Unit = {},
     onClearSpecificDate: () -> Unit = {},
+    onOpenRecycleBin: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val strings = LocalAppStrings.current
@@ -109,6 +111,16 @@ fun ReportsScreen(
     ) {
         // 1. Date Range Preset Filter Row & Export
         item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                OutlinedButton(onClick = onOpenRecycleBin) {
+                    Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Recycle Bin")
+                }
+            }
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),

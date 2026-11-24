@@ -11,16 +11,19 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DailyBatchDao {
-    @Query("SELECT * FROM daily_batches ORDER BY timestamp DESC")
+    @Query("SELECT * FROM daily_batches WHERE isDeleted = 0 ORDER BY timestamp DESC")
     fun getAllBatches(): Flow<List<DailyBatchEntry>>
 
-    @Query("SELECT * FROM daily_batches ORDER BY timestamp DESC")
+    @Query("SELECT * FROM daily_batches WHERE isDeleted = 0 ORDER BY timestamp DESC")
     suspend fun getAllBatchesList(): List<DailyBatchEntry>
+
+    @Query("SELECT * FROM daily_batches WHERE isDeleted = 1 ORDER BY timestamp DESC")
+    fun getDeletedBatches(): Flow<List<DailyBatchEntry>>
 
     @Query("SELECT * FROM daily_batches WHERE dateString = :dateString ORDER BY timestamp DESC")
     fun getBatchesForDate(dateString: String): Flow<List<DailyBatchEntry>>
 
-    @Query("SELECT * FROM daily_batches WHERE dateString >= :startDate AND dateString <= :endDate ORDER BY dateString ASC, timestamp ASC")
+    @Query("SELECT * FROM daily_batches WHERE dateString >= :startDate AND dateString <= :endDate AND isDeleted = 0 ORDER BY dateString ASC, timestamp ASC")
     fun getBatchesBetween(startDate: String, endDate: String): Flow<List<DailyBatchEntry>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
